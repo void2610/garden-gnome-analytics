@@ -14,6 +14,8 @@ interface ErrorRow {
   level: string;
   message: string;
   run_id: string | null;
+  event_slug: string | null;
+  device_slug: string | null;
   count: number;
 }
 
@@ -52,10 +54,13 @@ const COLUMNS: SortableColumn<ErrorRow>[] = [
     label: '例: 関連 run',
     accessor: (r) => r.run_id ?? '',
     render: (r) =>
-      r.run_id ? (
+      r.run_id && r.event_slug && r.device_slug ? (
         <Link
-          // biome-ignore lint/suspicious/noExplicitAny: 動的 params の型推論が router 循環で効かない
-          {...({ to: '/runs/$runId', params: { runId: r.run_id } } as any)}
+          {...({
+            to: '/runs/$slug',
+            params: { slug: `${r.event_slug}__${r.device_slug}__${r.run_id}` },
+            // biome-ignore lint/suspicious/noExplicitAny: 動的 params の型推論が router 循環で効かない
+          } as any)}
         >
           {r.run_id}
         </Link>
@@ -82,6 +87,8 @@ export function ErrorsPage() {
           level,
           message,
           ANY_VALUE(run_id) AS run_id,
+          ANY_VALUE(event_slug) AS event_slug,
+          ANY_VALUE(device_slug) AS device_slug,
           COUNT(*)::INTEGER AS count
         FROM ${errorsFrom(manifest.datasets)}
         ${where}

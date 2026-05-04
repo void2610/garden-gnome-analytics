@@ -27,15 +27,18 @@ const COLUMNS: SortableColumn<RunRow>[] = [
     key: 'started_at',
     label: '開始時刻',
     accessor: (r) => r.started_at,
-    render: (r) => (
-      <Link
-        // biome-ignore lint/suspicious/noExplicitAny: 動的 params の型推論が router 循環で効かない
-        {...({ to: '/runs/$runId', params: { runId: r.run_id } } as any)}
-        style={{ textDecoration: 'none' }}
-      >
-        {r.started_at ? new Date(r.started_at).toLocaleString('ja-JP') : '-'}
-      </Link>
-    ),
+    render: (r) => {
+      const slug = `${r.event_slug}__${r.device_slug}__${r.run_id}`;
+      return (
+        <Link
+          // biome-ignore lint/suspicious/noExplicitAny: 動的 params の型推論が router 循環で効かない
+          {...({ to: '/runs/$slug', params: { slug } } as any)}
+          style={{ textDecoration: 'none', color: 'inherit' }}
+        >
+          {r.started_at ? new Date(r.started_at).toLocaleString('ja-JP') : '-'}
+        </Link>
+      );
+    },
   },
   { key: 'device_slug', label: '機器', accessor: (r) => r.device_slug },
   {
@@ -113,7 +116,7 @@ export function RunsListPage() {
         <SortableTable
           columns={COLUMNS}
           rows={rows ?? []}
-          rowKey={(r) => r.run_id}
+          rowKey={(r) => `${r.event_slug}__${r.device_slug}__${r.run_id}`}
           defaultSort={{ key: 'started_at', direction: 'desc' }}
         />
       )}

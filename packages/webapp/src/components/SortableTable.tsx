@@ -1,6 +1,6 @@
 // 汎用のソート可能テーブル
 // columns で各列のキーとラベル・accessor を指定すると、列ヘッダクリックで昇順/降順を切替できる
-import { Card, Group, Table, UnstyledButton } from '@mantine/core';
+import { Card, Table, UnstyledButton } from '@mantine/core';
 import { IconArrowsSort, IconSortAscending, IconSortDescending } from '@tabler/icons-react';
 import { useMemo, useState, type ReactNode } from 'react';
 
@@ -19,7 +19,7 @@ export interface SortableColumn<TRow> {
 export interface SortableTableProps<TRow> {
   columns: SortableColumn<TRow>[];
   rows: TRow[];
-  // 行のキー
+  // 行のキー（重複しないこと）
   rowKey: (row: TRow, index: number) => string;
   defaultSort?: { key: string; direction: 'asc' | 'desc' };
   // 行クリック
@@ -53,13 +53,15 @@ export function SortableTable<TRow>({
     if (!sortKey) return rows;
     const col = columns.find((c) => c.key === sortKey);
     if (!col) return rows;
-    const acc = col.accessor ?? ((r: TRow) => (r as Record<string, unknown>)[sortKey] as string | number | null | undefined);
+    const acc =
+      col.accessor ??
+      ((r: TRow) =>
+        (r as Record<string, unknown>)[sortKey] as string | number | null | undefined);
     const numeric = col.numeric ?? false;
     const dir = direction === 'asc' ? 1 : -1;
     return [...rows].sort((a, b) => {
       const va = acc(a);
       const vb = acc(b);
-      // null/undefined は常に末尾
       if (va == null && vb == null) return 0;
       if (va == null) return 1;
       if (vb == null) return -1;
@@ -100,11 +102,12 @@ export function SortableTable<TRow>({
               style={onRowClick ? { cursor: 'pointer' } : undefined}
             >
               {columns.map((c) => {
-                const content = c.render
-                  ? c.render(row)
-                  : (c.accessor
-                      ? c.accessor(row)
-                      : ((row as Record<string, unknown>)[c.key] as ReactNode)) ?? '-';
+                const content =
+                  c.render?.(row) ??
+                  (c.accessor
+                    ? c.accessor(row)
+                    : ((row as Record<string, unknown>)[c.key] as ReactNode)) ??
+                  '-';
                 return (
                   <Table.Td key={c.key} style={{ textAlign: c.align ?? 'left' }}>
                     {content as ReactNode}
@@ -125,14 +128,5 @@ function SortIcon({ active, direction }: { active: boolean; direction: Direction
     <IconSortAscending size={14} />
   ) : (
     <IconSortDescending size={14} />
-  );
-}
-
-// 補助: ヘッダの右寄せ用ラッパ（数値列でラベル右寄せ＋アイコン左寄せにしたい時用）
-export function HeaderInline({ children }: { children: ReactNode }) {
-  return (
-    <Group gap={4} wrap="nowrap">
-      {children}
-    </Group>
   );
 }

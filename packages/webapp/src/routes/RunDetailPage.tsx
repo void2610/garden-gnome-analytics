@@ -46,18 +46,41 @@ interface ErrorRow {
   stack_trace: string | null;
 }
 
+function parseSlug(slug: string): { eventSlug: string; deviceSlug: string; runId: string } | null {
+  // `<event>__<device>__<run_id>` で分解。run_id 内に __ がある可能性は無いが念のため最後の split。
+  const parts = slug.split('__');
+  if (parts.length < 3) return null;
+  // 末尾 2 つ以外は eventSlug 扱い (eventSlug にハイフンや英数字)
+  const eventSlug = parts.slice(0, parts.length - 2).join('__');
+  const deviceSlug = parts[parts.length - 2];
+  const runId = parts[parts.length - 1];
+  if (!eventSlug || !deviceSlug || !runId) return null;
+  return { eventSlug, deviceSlug, runId };
+}
+
+function escapeSql(s: string): string {
+  return s.replace(/'/g, "''");
+}
+
 export function RunDetailPage() {
-  const { runId } = useParams({ from: '/runs/$runId' });
+  const { slug } = useParams({ from: '/runs/$slug' });
+  const parsed = parseSlug(slug);
   const { data: manifest } = useManifest();
 
+  const whereCommon = parsed
+    ? `WHERE event_slug = '${escapeSql(parsed.eventSlug)}'
+        AND device_slug = '${escapeSql(parsed.deviceSlug)}'
+        AND run_id = '${escapeSql(parsed.runId)}'`
+    : 'WHERE FALSE';
+
   const { data: summary } = useQuery({
-    queryKey: ['run-summary', runId, manifest?.generatedAt],
-    enabled: !!manifest,
+    queryKey: ['run-summary', slug, manifest?.generatedAt],
+    enabled: !!manifest && !!parsed,
     queryFn: async () => {
       if (!manifest) return null;
       const sql = `
         SELECT * FROM ${runsFrom(manifest.datasets)}
-        WHERE run_id = '${runId.replace(/'/g, "''")}'
+        ${whereCommon}
         LIMIT 1
       `;
       const [row] = await query<RunSummary>(sql);
@@ -66,14 +89,14 @@ export function RunDetailPage() {
   });
 
   const { data: events } = useQuery({
-    queryKey: ['run-events', runId, manifest?.generatedAt],
-    enabled: !!manifest,
+    queryKey: ['run-events', slug, manifest?.generatedAt],
+    enabled: !!manifest && !!parsed,
     queryFn: async () => {
       if (!manifest) return [];
       const sql = `
         SELECT seq, timestamp, event_type, payload
         FROM ${eventsFrom(manifest.datasets)}
-        WHERE run_id = '${runId.replace(/'/g, "''")}'
+        ${whereCommon}
         ORDER BY seq
       `;
       return await query<EventRow>(sql);
@@ -81,14 +104,14 @@ export function RunDetailPage() {
   });
 
   const { data: errors } = useQuery({
-    queryKey: ['run-errors', runId, manifest?.generatedAt],
-    enabled: !!manifest,
+    queryKey: ['run-errors', slug, manifest?.generatedAt],
+    enabled: !!manifest && !!parsed,
     queryFn: async () => {
       if (!manifest) return [];
       const sql = `
         SELECT timestamp, level, message, stack_trace
         FROM ${errorsFrom(manifest.datasets)}
-        WHERE run_id = '${runId.replace(/'/g, "''")}'
+        ${whereCommon}
         ORDER BY timestamp
       `;
       return await query<ErrorRow>(sql);

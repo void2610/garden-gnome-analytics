@@ -56,7 +56,8 @@ const runsRoute = createRoute({
 
 const runDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: 'runs/$runId',
+  // slug は `<event>__<device>__<run_id>` の合成キー
+  path: 'runs/$slug',
   component: RunDetailPage,
 });
 
