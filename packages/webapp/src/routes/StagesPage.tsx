@@ -77,13 +77,13 @@ const COLUMNS: SortableColumn<StageStat>[] = [
     label: '勝率',
     accessor: (r) => {
       if (!COMBAT_STAGE_TYPES.has(r.stage_type)) return null;
-      // 未決着も分母に入れる (敗北イベントが発火しないログ仕様への対応)
-      const total = r.win_count + r.loss_count + r.unresolved_count;
+      // 決着が付いた戦闘 (勝利/敗北) のみで集計、未決着は除外
+      const total = r.win_count + r.loss_count;
       return total > 0 ? r.win_count / total : null;
     },
     render: (r) => {
       if (!COMBAT_STAGE_TYPES.has(r.stage_type)) return '-';
-      const total = r.win_count + r.loss_count + r.unresolved_count;
+      const total = r.win_count + r.loss_count;
       return total > 0 ? `${((r.win_count / total) * 100).toFixed(1)}%` : '-';
     },
     numeric: true,
@@ -198,6 +198,7 @@ export function StagesPage() {
         ステージ種別ごとの到達回数。戦闘ステージは勝敗・ターン・HP・所要時間も集計。
         「未決着」= 戦闘途中で run のログが途切れたケース (アプリ強制終了 /
         次の客のためのリセット等)。HP=0 まで普通にプレイした場合は敗北として記録される。
+        勝率と各平均値は未決着を除外した「決着が付いた戦闘のみ」で集計。
       </Text>
       <FilterBar filter={search} navigateTo={{ to: '/stages' }} />
       <QueryError error={error} />
