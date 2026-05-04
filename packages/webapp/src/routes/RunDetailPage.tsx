@@ -163,12 +163,12 @@ export function RunDetailPage() {
 
         <Tabs.Panel value="timeline" pt="sm">
           <ScrollArea h={500}>
-            <Table withRowBorders={false} striped fz="xs">
+            <Table withRowBorders={false} striped fz="xs" style={{ tableLayout: 'fixed' }}>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>seq</Table.Th>
-                  <Table.Th>時刻</Table.Th>
-                  <Table.Th>event</Table.Th>
+                  <Table.Th style={{ width: 60 }}>seq</Table.Th>
+                  <Table.Th style={{ width: 100 }}>時刻</Table.Th>
+                  <Table.Th style={{ width: 180 }}>event</Table.Th>
                   <Table.Th>payload</Table.Th>
                 </Table.Tr>
               </Table.Thead>
@@ -176,13 +176,19 @@ export function RunDetailPage() {
                 {(events ?? []).slice(0, 1000).map((e) => (
                   <Table.Tr key={e.seq}>
                     <Table.Td>{e.seq}</Table.Td>
-                    <Table.Td>
+                    <Table.Td style={{ whiteSpace: 'nowrap' }}>
                       {new Date(e.timestamp).toLocaleTimeString('ja-JP', { hour12: false })}
                     </Table.Td>
-                    <Table.Td>
+                    <Table.Td style={{ whiteSpace: 'nowrap' }}>
                       <Badge variant="light">{e.event_type}</Badge>
                     </Table.Td>
-                    <Table.Td style={{ fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+                    <Table.Td
+                      style={{
+                        fontFamily: 'monospace',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-all',
+                      }}
+                    >
                       {e.payload}
                     </Table.Td>
                   </Table.Tr>
