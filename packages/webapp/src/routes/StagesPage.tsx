@@ -14,11 +14,15 @@ interface StageStat {
   reach_count: number;
   win_count: number;
   loss_count: number;
+  unresolved_count: number;
   avg_turns: number | null;
   avg_remain_hp: number | null;
   avg_damage: number | null;
   avg_elapsed_sec: number | null;
 }
+
+// 戦闘が発生し得るステージ種別 (これ以外は勝敗等の列を - 表示)
+const COMBAT_STAGE_TYPES = new Set(['Battle', 'Boss']);
 
 const STAGE_TYPE_JA: Record<string, string> = {
   Battle: 'バトル',
@@ -47,7 +51,7 @@ const COLUMNS: SortableColumn<StageStat>[] = [
     key: 'win_count',
     label: '勝利数',
     accessor: (r) => r.win_count,
-    render: (r) => (r.win_count > 0 || r.loss_count > 0 ? r.win_count : '-'),
+    render: (r) => (COMBAT_STAGE_TYPES.has(r.stage_type) ? r.win_count : '-'),
     numeric: true,
     align: 'right',
   },
@@ -55,7 +59,16 @@ const COLUMNS: SortableColumn<StageStat>[] = [
     key: 'loss_count',
     label: '敗北数',
     accessor: (r) => r.loss_count,
-    render: (r) => (r.win_count > 0 || r.loss_count > 0 ? r.loss_count : '-'),
+    render: (r) => (COMBAT_STAGE_TYPES.has(r.stage_type) ? r.loss_count : '-'),
+    numeric: true,
+    align: 'right',
+  },
+  {
+    key: 'unresolved_count',
+    label: '未決着',
+    accessor: (r) => r.unresolved_count,
+    render: (r) =>
+      COMBAT_STAGE_TYPES.has(r.stage_type) ? r.unresolved_count : '-',
     numeric: true,
     align: 'right',
   },
@@ -63,11 +76,14 @@ const COLUMNS: SortableColumn<StageStat>[] = [
     key: 'win_rate',
     label: '勝率',
     accessor: (r) => {
-      const total = r.win_count + r.loss_count;
+      if (!COMBAT_STAGE_TYPES.has(r.stage_type)) return null;
+      // 未決着も分母に入れる (敗北イベントが発火しないログ仕様への対応)
+      const total = r.win_count + r.loss_count + r.unresolved_count;
       return total > 0 ? r.win_count / total : null;
     },
     render: (r) => {
-      const total = r.win_count + r.loss_count;
+      if (!COMBAT_STAGE_TYPES.has(r.stage_type)) return '-';
+      const total = r.win_count + r.loss_count + r.unresolved_count;
       return total > 0 ? `${((r.win_count / total) * 100).toFixed(1)}%` : '-';
     },
     numeric: true,
@@ -152,6 +168,12 @@ export function StagesPage() {
           SUM(CASE WHEN event_type = 'StageEnter' THEN 1 ELSE 0 END)::INTEGER AS reach_count,
           SUM(CASE WHEN event_type = 'BattleWin' THEN 1 ELSE 0 END)::INTEGER AS win_count,
           SUM(CASE WHEN event_type = 'BattleLose' THEN 1 ELSE 0 END)::INTEGER AS loss_count,
+          -- BattleLose イベントが発火されないままログが終わるケースを「未決着」として算出
+          (
+            SUM(CASE WHEN event_type = 'StageEnter' THEN 1 ELSE 0 END)
+            - SUM(CASE WHEN event_type = 'BattleWin' THEN 1 ELSE 0 END)
+            - SUM(CASE WHEN event_type = 'BattleLose' THEN 1 ELSE 0 END)
+          )::INTEGER AS unresolved_count,
           AVG(CASE WHEN event_type = 'BattleWin' THEN CAST(turn_count AS DOUBLE) END) AS avg_turns,
           AVG(CASE WHEN event_type = 'BattleWin' THEN CAST(remain_hp AS DOUBLE) END) AS avg_remain_hp,
           AVG(CASE WHEN event_type = 'BattleWin' THEN CAST(max_hp AS DOUBLE) - CAST(remain_hp AS DOUBLE) END) AS avg_damage,
@@ -173,7 +195,9 @@ export function StagesPage() {
     <Stack>
       <Title order={2}>ステージ分析</Title>
       <Text c="dimmed" size="sm">
-        ステージ種別ごとの到達回数と、戦闘ステージは勝敗・ターン・HP・所要時間も集計
+        ステージ種別ごとの到達回数。戦闘ステージは勝敗・ターン・HP・所要時間も集計。
+        「未決着」= ログ仕様上 BattleLose イベントが記録されなかったケース
+        (アプリ強制終了 / 撤退 / 戦闘途中で run 終了)
       </Text>
       <FilterBar filter={search} navigateTo={{ to: '/stages' }} />
       <QueryError error={error} />
