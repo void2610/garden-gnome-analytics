@@ -1,0 +1,10 @@
+2026-05-03 10:29:28.924 [LogManager] Initialized
+2026-05-03 10:29:28.924 [LogManager] persistentDataPath=/Users/anon/Library/Application Support/com.NekonoOdeko.the-garden-of-garden-gnome
+2026-05-03 10:30:49.467 [Error] Failed to update rich presence -
+2026-05-03 10:30:49.645 [Log] [AnalyticsLogger] ランログ開始: /Users/anon/Library/Application Support/com.NekonoOdeko.the-garden-of-garden-gnome/Logs/run_20260503_103049_645.log
+2026-05-03 10:47:56.069 [Exception] NullReferenceException: Object reference not set to an instance of an object
+GardenGnome.InputSystem.WindowBase.get_DefaultFocusElement () (at <hashed>:0)
+GardenGnome.InputSystem.UIFocusManager.SetFocusDelayed () (at <hashed>:0)
+UnityEngine.Debug:LogException(Exception)
+
+2026-05-03 10:48:00.000 [Log] カードモード切替入力を受信

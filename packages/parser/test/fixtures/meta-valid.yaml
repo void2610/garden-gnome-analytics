@@ -1,0 +1,6 @@
+event: テストイベント
+event_date: 2026-05-03
+venue: テスト会場
+device: MacBook Pro 14"
+game_version: 0.2.x
+notes: ユニットテスト用フィクスチャ
