@@ -1,18 +1,26 @@
 import { Loader, Stack, Tabs, Text, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import { FilterBar } from '../components/FilterBar';
 import { QueryError } from '../components/QueryError';
 import { SortableTable, type SortableColumn } from '../components/SortableTable';
 import { useManifest } from '../hooks/useManifest';
 import { buildWhere } from '../lib/filter';
 import { query } from '../lib/duckdb/query';
+import { localizeCardName, useLocalization } from '../lib/localization';
 import { eventsFrom, runsFrom } from '../queries/runsParquet';
 
 export function CardsPage() {
   const search = useSearch({ from: '/cards' });
   const { data: manifest } = useManifest();
+  const { data: loc } = useLocalization();
+  const cardNames = loc?.cardNames;
   const filterKey = JSON.stringify(search);
+
+  const usageColumns = useMemo(() => buildUsageColumns(cardNames), [cardNames]);
+  const pickColumns = useMemo(() => buildPickColumns(cardNames), [cardNames]);
+  const outcomeColumns = useMemo(() => buildOutcomeColumns(cardNames), [cardNames]);
 
   const { data: usage, isLoading: usageLoading, error: usageError } = useQuery({
     queryKey: ['cards-usage', filterKey, manifest?.generatedAt],
@@ -152,7 +160,7 @@ export function CardsPage() {
             <Loader />
           ) : (
             <SortableTable
-              columns={USAGE_COLUMNS}
+              columns={usageColumns}
               rows={usage ?? []}
               rowKey={(r) => `${r.card_name}-${r.growth_stage}`}
               defaultSort={{ key: 'use_count', direction: 'desc' }}
@@ -162,7 +170,7 @@ export function CardsPage() {
 
         <Tabs.Panel value="pick" pt="sm">
           <SortableTable
-            columns={PICK_COLUMNS}
+            columns={pickColumns}
             rows={pickRate ?? []}
             rowKey={(r) => r.card}
             defaultSort={{ key: 'shown', direction: 'desc' }}
@@ -175,7 +183,7 @@ export function CardsPage() {
           </Text>
           <div style={{ marginTop: 8 }}>
             <SortableTable
-              columns={OUTCOME_COLUMNS}
+              columns={outcomeColumns}
               rows={outcomeDiff ?? []}
               rowKey={(r) => r.card_name}
               defaultSort={{ key: 'total_uses', direction: 'desc' }}
@@ -194,19 +202,35 @@ interface UsageRow {
   run_count: number;
 }
 
-const USAGE_COLUMNS: SortableColumn<UsageRow>[] = [
-  { key: 'card_name', label: 'カード名', accessor: (r) => r.card_name },
-  { key: 'growth_stage', label: '成長段階', accessor: (r) => r.growth_stage },
-  {
-    key: 'use_count',
-    label: '使用回数',
-    accessor: (r) => r.use_count,
-    render: (r) => r.use_count.toLocaleString('ja-JP'),
-    numeric: true,
-    align: 'right',
-  },
-  { key: 'run_count', label: '出現ラン数', accessor: (r) => r.run_count, numeric: true, align: 'right' },
-];
+function buildUsageColumns(
+  cardNames: Record<string, string> | undefined,
+): SortableColumn<UsageRow>[] {
+  return [
+    {
+      key: 'card_name',
+      label: 'カード名',
+      // ソートは日本語名で行う（同名は英名で安定化）
+      accessor: (r) => `${cardNames?.[r.card_name] ?? r.card_name}::${r.card_name}`,
+      render: (r) => localizeCardName(r.card_name, cardNames),
+    },
+    { key: 'growth_stage', label: '成長段階', accessor: (r) => r.growth_stage },
+    {
+      key: 'use_count',
+      label: '使用回数',
+      accessor: (r) => r.use_count,
+      render: (r) => r.use_count.toLocaleString('ja-JP'),
+      numeric: true,
+      align: 'right',
+    },
+    {
+      key: 'run_count',
+      label: '出現ラン数',
+      accessor: (r) => r.run_count,
+      numeric: true,
+      align: 'right',
+    },
+  ];
+}
 
 interface PickRow {
   card: string;
@@ -215,20 +239,29 @@ interface PickRow {
   pick_rate_pct: number;
 }
 
-const PICK_COLUMNS: SortableColumn<PickRow>[] = [
-  { key: 'card', label: 'カード', accessor: (r) => r.card },
-  { key: 'shown', label: '提示回数', accessor: (r) => r.shown, numeric: true, align: 'right' },
-  { key: 'picked', label: '選択回数', accessor: (r) => r.picked, numeric: true, align: 'right' },
-  {
-    key: 'pick_rate_pct',
-    label: '選択率 %',
-    accessor: (r) => r.pick_rate_pct,
-    render: (r) =>
-      typeof r.pick_rate_pct === 'number' ? r.pick_rate_pct.toFixed(1) : String(r.pick_rate_pct),
-    numeric: true,
-    align: 'right',
-  },
-];
+function buildPickColumns(
+  cardNames: Record<string, string> | undefined,
+): SortableColumn<PickRow>[] {
+  return [
+    {
+      key: 'card',
+      label: 'カード',
+      accessor: (r) => `${cardNames?.[r.card] ?? r.card}::${r.card}`,
+      render: (r) => localizeCardName(r.card, cardNames),
+    },
+    { key: 'shown', label: '提示回数', accessor: (r) => r.shown, numeric: true, align: 'right' },
+    { key: 'picked', label: '選択回数', accessor: (r) => r.picked, numeric: true, align: 'right' },
+    {
+      key: 'pick_rate_pct',
+      label: '選択率 %',
+      accessor: (r) => r.pick_rate_pct,
+      render: (r) =>
+        typeof r.pick_rate_pct === 'number' ? r.pick_rate_pct.toFixed(1) : String(r.pick_rate_pct),
+      numeric: true,
+      align: 'right',
+    },
+  ];
+}
 
 interface OutcomeRow {
   card_name: string;
@@ -237,9 +270,36 @@ interface OutcomeRow {
   uses_in_loss: number;
 }
 
-const OUTCOME_COLUMNS: SortableColumn<OutcomeRow>[] = [
-  { key: 'card_name', label: 'カード名', accessor: (r) => r.card_name },
-  { key: 'total_uses', label: '合計使用', accessor: (r) => r.total_uses, numeric: true, align: 'right' },
-  { key: 'uses_in_win', label: 'win 使用', accessor: (r) => r.uses_in_win, numeric: true, align: 'right' },
-  { key: 'uses_in_loss', label: 'loss 使用', accessor: (r) => r.uses_in_loss, numeric: true, align: 'right' },
-];
+function buildOutcomeColumns(
+  cardNames: Record<string, string> | undefined,
+): SortableColumn<OutcomeRow>[] {
+  return [
+    {
+      key: 'card_name',
+      label: 'カード名',
+      accessor: (r) => `${cardNames?.[r.card_name] ?? r.card_name}::${r.card_name}`,
+      render: (r) => localizeCardName(r.card_name, cardNames),
+    },
+    {
+      key: 'total_uses',
+      label: '合計使用',
+      accessor: (r) => r.total_uses,
+      numeric: true,
+      align: 'right',
+    },
+    {
+      key: 'uses_in_win',
+      label: 'win 使用',
+      accessor: (r) => r.uses_in_win,
+      numeric: true,
+      align: 'right',
+    },
+    {
+      key: 'uses_in_loss',
+      label: 'loss 使用',
+      accessor: (r) => r.uses_in_loss,
+      numeric: true,
+      align: 'right',
+    },
+  ];
+}
