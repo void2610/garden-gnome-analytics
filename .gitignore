@@ -1,0 +1,28 @@
+# データ実体（メタデータYAMLのみコミット、ログ本体はサイズ大なので除外）
+data/**/*.log
+data/**/*.json
+!data/**/meta.yaml
+
+# 生成物
+dist/
+build/
+node_modules/
+.parcel-cache/
+.vite/
+
+# Pythonキャッシュ（前処理にPythonを使う場合）
+__pycache__/
+*.pyc
+.venv/
+
+# DuckDB / SQLite
+*.duckdb
+*.duckdb.wal
+*.sqlite
+*.sqlite-journal
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
