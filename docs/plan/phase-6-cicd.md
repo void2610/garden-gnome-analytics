@@ -130,3 +130,10 @@ gh workflow run ci.yml --ref <branch>
 - 大型イベント追加時に運用ポリシーを再点検する余地（`data-policy.md` を改訂）。
 
 ## 完了メモ
+
+- 所要: 約 5 分
+- 想定外:
+  - PR 検証用 `ci.yml` と main デプロイ用 `deploy.yml` を分離。
+  - `pnpm/action-setup@v4` + `actions/setup-node@v4` の組み合わせで pnpm キャッシュも有効。
+  - GitHub Pages 設定 (Settings > Pages > Source: GitHub Actions) はリポジトリ所有者側で
+    手動切替が必要。

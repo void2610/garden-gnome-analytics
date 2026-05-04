@@ -145,3 +145,10 @@ pnpm -F @gga/parser exec tsx scripts/smoke.ts \
 - `@gga/shared` の Zod スキーマは webapp（Phase 3 以降）でも `z.infer` で型として再利用される。
 
 ## 完了メモ
+
+- コミット: `486aa64`
+- 所要: 約 30 分
+- 想定外:
+  - 仕様書の 21 種以外に `ItemUsed` `RewardSkipped` `BattleLose` も実ログに存在したため追加。
+  - `discriminatedUnion` は固定長 tuple を要求するため、配列を index で 1 件ずつ展開する書き方になった。
+  - 通常ログには `Warning` レベルも観測されたため `NormalLogLevel` に追加。

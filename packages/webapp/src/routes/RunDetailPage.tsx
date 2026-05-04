@@ -193,8 +193,8 @@ export function RunDetailPage() {
             <Text c="dimmed">関連エラーなし</Text>
           ) : (
             <Stack>
-              {(errors ?? []).map((e, idx) => (
-                <Card key={idx} withBorder padding="sm">
+              {(errors ?? []).map((e) => (
+                <Card key={`${e.timestamp}-${e.level}`} withBorder padding="sm">
                   <Group>
                     <Badge color={e.level === 'Exception' ? 'red' : 'orange'}>
                       {e.level}

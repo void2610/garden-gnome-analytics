@@ -139,3 +139,12 @@ duckdb -c "SELECT outcome, COUNT(*) FROM 'public-data/runs/**/*.parquet' GROUP B
 - ingest は冪等であること（再実行で同じ結果）を担保しておくと、CI でも回せる。
 
 ## 完了メモ
+
+- コミット: `f51ca10`
+- 所要: 約 30 分
+- 想定外:
+  - DuckDB の Appender API ではなく、NDJSON 経由で `read_json` → `COPY ... TO PARQUET` が
+    実装も保守も単純だったためそちらを採用。
+  - 実データで 103 ラン / 14635 イベント / 2818 エラー を 0.18 秒で生成、Parquet 合計 200KB。
+  - `pnpm ingest` のデフォルト cwd が `packages/parser` だったので root の package.json
+    で `--data-dir ../../data --out ../../public-data` を付ける形に修正。

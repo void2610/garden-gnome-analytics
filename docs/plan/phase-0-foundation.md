@@ -120,8 +120,10 @@ pnpm dev         # → http://localhost:5173/ が開き「Hello GGA」表示
 
 ## 完了メモ
 
-<!-- 実施後に追記:
-- コミット: <hash>
-- 所要: <時間>
-- 想定外: <あれば>
--->
+- コミット: `feb90c0`
+- 所要: 約 30 分
+- 想定外:
+  - `composite: true` + `noEmit: true` の組み合わせで参照プロジェクトがエラーになるため、
+    project references を撤去し各パッケージの tsconfig を独立化した。
+  - Biome 1.9.4 の `linter.rules.style.useImportType` は recommended で警告止まり。
+  - `vitest run` は test ファイル 0 件で exit 1 になるため `--passWithNoTests` を付与。

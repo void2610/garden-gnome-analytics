@@ -134,3 +134,13 @@ pnpm build && pnpm -F @gga/webapp preview
 - フィルタ状態は URL search params に置く方針も Phase 4 で具体化。
 
 ## 完了メモ
+
+- コミット: `d9507ad`
+- 所要: 約 40 分
+- 想定外:
+  - TanStack Router は code-based ルーティング（`@tanstack/router-plugin` 不使用）で実装。
+  - Vite の `publicDir` をワークスペースルートの `public-data/` に向けることで
+    開発時もそのまま `/<base>/events/...` が解決される。
+  - DuckDB-Wasm の Worker URL は CORS 回避のため `Blob` URL でラップ。
+  - `Link to="/datasets/$slug"` の動的 params 推論が router 循環で型エラーになったため、
+    `as any` でキャストして回避（実害なし）。

@@ -179,3 +179,10 @@ pnpm dev
 - このフェーズの完了時点で「最低限の社内/個人レビュー」が可能。Phase 6（CI/CD）と並走させて公開準備に入って良い。
 
 ## 完了メモ
+
+- コミット: `d9507ad`（Phase 3-5 とまとめて）
+- 所要: Phase 3-5 まとめて 約 30 分
+- 想定外:
+  - チャートは Mantine Charts (Recharts wrapper) で十分要件を満たせたため Observable Plot は導入見送り。
+  - Mantine React Table は導入せず、`@mantine/core` の `Table` を直接使う構成にした
+    （ソート・ページングは実装簡素化のため省略、ORDER BY と LIMIT 500 で運用）。

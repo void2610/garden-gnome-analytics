@@ -140,3 +140,12 @@ pnpm dev
 - このフェーズで `payload` 展開列の必要性が確定したら、Phase 2 の取り込みスキーマと `docs/data-schema.md` を改訂する。
 
 ## 完了メモ
+
+- コミット: `d9507ad`（Phase 3-5 まとめて）
+- 所要: 約 15 分
+- 想定外:
+  - ヒートマップは ECharts の代わりに自前 CSS Grid 実装で十分視認できた
+    （マップサイズが小さいため）。後続でデータが増えたら ECharts に切替検討。
+  - エラー画面は signature ではなく `(level, message)` でグルーピング。
+    payload 中のスタックトレースは `[level, message]` ペアでほぼユニーク化できているため。
+  - Spotlight は未実装（次フェーズへ持ち越し）。
