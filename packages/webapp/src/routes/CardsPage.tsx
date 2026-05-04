@@ -155,7 +155,7 @@ export function CardsPage() {
               columns={USAGE_COLUMNS}
               rows={usage ?? []}
               rowKey={(r) => `${r.card_name}-${r.growth_stage}`}
-              defaultSort={{ use_count: 'desc' }}
+              defaultSort={{ key: 'use_count', direction: 'desc' }}
             />
           )}
         </Tabs.Panel>
@@ -165,7 +165,7 @@ export function CardsPage() {
             columns={PICK_COLUMNS}
             rows={pickRate ?? []}
             rowKey={(r) => r.card}
-            defaultSort={{ shown: 'desc' }}
+            defaultSort={{ key: 'shown', direction: 'desc' }}
           />
         </Tabs.Panel>
 
@@ -178,7 +178,7 @@ export function CardsPage() {
               columns={OUTCOME_COLUMNS}
               rows={outcomeDiff ?? []}
               rowKey={(r) => r.card_name}
-              defaultSort={{ total_uses: 'desc' }}
+              defaultSort={{ key: 'total_uses', direction: 'desc' }}
             />
           </div>
         </Tabs.Panel>

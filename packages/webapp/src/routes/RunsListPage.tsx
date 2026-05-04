@@ -117,7 +117,7 @@ export function RunsListPage() {
           columns={COLUMNS}
           rows={rows ?? []}
           rowKey={(r) => `${r.event_slug}__${r.device_slug}__${r.run_id}`}
-          defaultSort={{ started_at: 'desc' }}
+          defaultSort={{ key: 'started_at', direction: 'desc' }}
         />
       )}
     </Stack>

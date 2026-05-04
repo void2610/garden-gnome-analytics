@@ -112,7 +112,7 @@ export function ErrorsPage() {
           columns={COLUMNS}
           rows={rows ?? []}
           rowKey={(r, i) => `${r.level}-${i}`}
-          defaultSort={{ count: 'desc' }}
+          defaultSort={{ key: 'count', direction: 'desc' }}
         />
       )}
       {rows && rows.length === 0 && <Text c="dimmed">エラーなし</Text>}

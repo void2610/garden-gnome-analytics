@@ -97,7 +97,7 @@ export function StagesPage() {
           columns={COLUMNS}
           rows={rows ?? []}
           rowKey={(r) => r.stage_id}
-          defaultSort={{ reach_count: 'desc' }}
+          defaultSort={{ key: 'reach_count', direction: 'desc' }}
         />
       )}
       {rows && rows.length === 0 && <Text c="dimmed">該当するステージなし</Text>}
