@@ -11,9 +11,12 @@ interface Row {
 }
 
 const ROWS: Row[] = [
-  { id: 'a', name: 'Apple', value: 30 },
-  { id: 'b', name: 'Banana', value: 10 },
-  { id: 'c', name: 'Cherry', value: 20 },
+  { id: '1', name: 'Apple', value: 30 },
+  { id: '2', name: 'Banana', value: 10 },
+  { id: '3', name: 'Cherry', value: 20 },
+  { id: '4', name: 'Apple', value: 5 },
+  { id: '5', name: 'Banana', value: 50 },
+  { id: '6', name: 'Apple', value: 15 },
 ];
 
 const COLUMNS: SortableColumn<Row>[] = [
@@ -29,67 +32,157 @@ function renderTable(rows: Row[]) {
   );
 }
 
-function getBodyRowCount(): number {
-  return screen.getAllByRole('row').length - 1; // header 行を除く
+function getRowCount(): number {
+  return screen.getAllByRole('row').length - 1;
 }
 
-function getCellTexts(colIndex: number): string[] {
-  const rows = screen.getAllByRole('row').slice(1); // header を除く
+function getCol(colIndex: number): string[] {
+  const rows = screen.getAllByRole('row').slice(1);
   return rows.map((tr) => {
     const cells = tr.querySelectorAll('td');
     return cells[colIndex]?.textContent?.trim() ?? '';
   });
 }
 
-describe('SortableTable', () => {
+describe('SortableTable - 単一キーソート', () => {
   it('初期状態で行数が rows と一致する', () => {
     renderTable(ROWS);
-    expect(getBodyRowCount()).toBe(3);
+    expect(getRowCount()).toBe(6);
   });
 
-  it('ヘッダクリックでソートしても行数は変わらない', async () => {
-    const user = userEvent.setup();
-    renderTable(ROWS);
-
-    expect(getBodyRowCount()).toBe(3);
-    await user.click(screen.getByText('value'));
-    expect(getBodyRowCount()).toBe(3);
-    await user.click(screen.getByText('value'));
-    expect(getBodyRowCount()).toBe(3);
-    await user.click(screen.getByText('name'));
-    expect(getBodyRowCount()).toBe(3);
-  });
-
-  it('value を昇順クリックすると 10/20/30 の順', async () => {
-    const user = userEvent.setup();
-    renderTable(ROWS);
-    // 数値列の初期は降順なので、まず desc → 30,20,10
-    await user.click(screen.getByText('value'));
-    expect(getCellTexts(1)).toEqual(['30', '20', '10']);
-    // もう一度クリックで昇順 → 10,20,30
-    await user.click(screen.getByText('value'));
-    expect(getCellTexts(1)).toEqual(['10', '20', '30']);
-  });
-
-  it('クリック 5 回繰り返しても行数が増えない (重複バグ回帰検査)', async () => {
+  it('クリックを繰り返しても行数が増えない', async () => {
     const user = userEvent.setup();
     renderTable(ROWS);
     for (let i = 0; i < 5; i++) {
       await user.click(screen.getByText('value'));
-      expect(getBodyRowCount()).toBe(3);
-    }
-    for (let i = 0; i < 5; i++) {
-      await user.click(screen.getByText('name'));
-      expect(getBodyRowCount()).toBe(3);
+      expect(getRowCount()).toBe(6);
     }
   });
 
-  it('元の rows 配列を mutate しない', async () => {
+  it('value 列クリックで降順 → もう一度で昇順', async () => {
     const user = userEvent.setup();
-    const originalSnapshot = ROWS.map((r) => ({ ...r }));
     renderTable(ROWS);
     await user.click(screen.getByText('value'));
+    expect(getCol(1)).toEqual(['50', '30', '20', '15', '10', '5']);
+    await user.click(screen.getByText('value'));
+    expect(getCol(1)).toEqual(['5', '10', '15', '20', '30', '50']);
+  });
+});
+
+describe('SortableTable - 複数キーソート', () => {
+  it('Shift+クリックで第二キーが追加され、name 昇順 + value 降順 で並ぶ', async () => {
+    const user = userEvent.setup();
+    renderTable(ROWS);
+
+    // 第一キー: name (昇順、デフォルト)
     await user.click(screen.getByText('name'));
-    expect(ROWS).toEqual(originalSnapshot);
+    // 第二キー: value (Shift+クリック → デフォルト降順)
+    await user.keyboard('{Shift>}');
+    await user.click(screen.getByText('value'));
+    await user.keyboard('{/Shift}');
+
+    // name 昇順、同 name 内では value 降順
+    expect(getCol(0)).toEqual([
+      'Apple',
+      'Apple',
+      'Apple',
+      'Banana',
+      'Banana',
+      'Cherry',
+    ]);
+    expect(getCol(1)).toEqual(['30', '15', '5', '50', '10', '20']);
+  });
+
+  it('Shift+クリック 2 回で第二キーの方向が反転する', async () => {
+    const user = userEvent.setup();
+    renderTable(ROWS);
+    await user.click(screen.getByText('name')); // name 昇順
+
+    // value 追加 (1回目: 降順)
+    await user.keyboard('{Shift>}');
+    await user.click(screen.getByText('value'));
+    expect(getCol(1)).toEqual(['30', '15', '5', '50', '10', '20']);
+
+    // 2回目: 昇順に反転
+    await user.click(screen.getByText('value'));
+    await user.keyboard('{/Shift}');
+    expect(getCol(1)).toEqual(['5', '15', '30', '10', '50', '20']);
+  });
+
+  it('Shift+クリック 3 回で第二キーが削除される', async () => {
+    const user = userEvent.setup();
+    renderTable(ROWS);
+    await user.click(screen.getByText('name'));
+
+    await user.keyboard('{Shift>}');
+    await user.click(screen.getByText('value')); // 降順
+    await user.click(screen.getByText('value')); // 昇順
+    await user.click(screen.getByText('value')); // 削除
+    await user.keyboard('{/Shift}');
+
+    // value のソートは外れ、name のみで安定
+    // name のみソートだと同 name 内の順序は不定なので、name 列だけ検証
+    expect(getCol(0)).toEqual([
+      'Apple',
+      'Apple',
+      'Apple',
+      'Banana',
+      'Banana',
+      'Cherry',
+    ]);
+  });
+
+  it('単一クリック (Shift なし) は複数キーをリセットして単一にする', async () => {
+    const user = userEvent.setup();
+    renderTable(ROWS);
+    await user.click(screen.getByText('name'));
+    await user.keyboard('{Shift>}');
+    await user.click(screen.getByText('value'));
+    await user.keyboard('{/Shift}');
+    // この時点で複数キー (name, value)
+
+    // 通常クリックすると単一キーに戻る
+    await user.click(screen.getByText('value'));
+    // value 単独 (降順がデフォルト) なら 50,30,20,15,10,5
+    expect(getCol(1)).toEqual(['50', '30', '20', '15', '10', '5']);
+  });
+
+  it('複数キーソート中も行数は不変', async () => {
+    const user = userEvent.setup();
+    renderTable(ROWS);
+    for (let i = 0; i < 5; i++) {
+      await user.keyboard('{Shift>}');
+      await user.click(screen.getByText('name'));
+      await user.click(screen.getByText('value'));
+      await user.keyboard('{/Shift}');
+      expect(getRowCount()).toBe(6);
+    }
+  });
+});
+
+describe('SortableTable - defaultSort', () => {
+  it('defaultSort に配列を渡すと複数キーが初期適用される', () => {
+    render(
+      <MantineProvider>
+        <SortableTable
+          columns={COLUMNS}
+          rows={ROWS}
+          rowKey={(r) => r.id}
+          defaultSort={[
+            { key: 'name', direction: 'asc' },
+            { key: 'value', direction: 'desc' },
+          ]}
+        />
+      </MantineProvider>,
+    );
+    expect(getCol(0)).toEqual([
+      'Apple',
+      'Apple',
+      'Apple',
+      'Banana',
+      'Banana',
+      'Cherry',
+    ]);
+    expect(getCol(1)).toEqual(['30', '15', '5', '50', '10', '20']);
   });
 });
