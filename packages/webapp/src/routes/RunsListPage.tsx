@@ -10,6 +10,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { Link, useSearch } from '@tanstack/react-router';
 import { FilterBar } from '../components/FilterBar';
+import { QueryError } from '../components/QueryError';
 import { useManifest } from '../hooks/useManifest';
 import { buildWhereRuns } from '../lib/filter';
 import { query } from '../lib/duckdb/query';
@@ -33,7 +34,7 @@ export function RunsListPage() {
   const { data: manifest } = useManifest();
   const filterKey = JSON.stringify(search);
 
-  const { data: rows, isLoading } = useQuery({
+  const { data: rows, isLoading, error } = useQuery({
     queryKey: ['runs-list', filterKey, manifest?.generatedAt],
     enabled: !!manifest && manifest.datasets.length > 0,
     queryFn: async () => {
@@ -56,6 +57,7 @@ export function RunsListPage() {
     <Stack>
       <Title order={2}>ラン一覧</Title>
       <FilterBar filter={search} navigateTo={{ to: '/runs' }} />
+      <QueryError error={error} />
       <Text c="dimmed" size="sm">
         {rows?.length ?? 0} 件 (最大 500 件)
       </Text>

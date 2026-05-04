@@ -11,6 +11,7 @@ import { BarChart, LineChart } from '@mantine/charts';
 import { useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { FilterBar } from '../components/FilterBar';
+import { QueryError } from '../components/QueryError';
 import { useManifest } from '../hooks/useManifest';
 import { buildWhereRuns } from '../lib/filter';
 import { query } from '../lib/duckdb/query';
@@ -21,7 +22,7 @@ export function DashboardPage() {
   const { data: manifest } = useManifest();
 
   const filterKey = JSON.stringify(search);
-  const { data: kpi } = useQuery({
+  const { data: kpi, error: kpiError } = useQuery({
     queryKey: ['dashboard-kpi', filterKey, manifest?.generatedAt],
     enabled: !!manifest && manifest.datasets.length > 0,
     queryFn: async () => {
@@ -104,6 +105,7 @@ export function DashboardPage() {
     <Stack>
       <Title order={2}>ダッシュボード</Title>
       <FilterBar filter={search} navigateTo={{ to: '/dashboard' }} />
+      <QueryError error={kpiError} />
       <SimpleGrid cols={{ base: 2, sm: 4 }}>
         <Kpi label="総ラン数" value={kpi?.total_runs ?? '-'} />
         <Kpi label="中央プレイ時間 (分)" value={medianMin} />

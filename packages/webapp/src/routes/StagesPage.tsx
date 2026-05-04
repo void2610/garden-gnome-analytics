@@ -2,6 +2,7 @@ import { Card, Loader, Stack, Table, Text, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { FilterBar } from '../components/FilterBar';
+import { QueryError } from '../components/QueryError';
 import { useManifest } from '../hooks/useManifest';
 import { buildWhere } from '../lib/filter';
 import { query } from '../lib/duckdb/query';
@@ -20,7 +21,7 @@ export function StagesPage() {
   const { data: manifest } = useManifest();
   const filterKey = JSON.stringify(search);
 
-  const { data: rows, isLoading } = useQuery({
+  const { data: rows, isLoading, error } = useQuery({
     queryKey: ['stages-stats', filterKey, manifest?.generatedAt],
     enabled: !!manifest && manifest.datasets.length > 0,
     queryFn: async () => {
@@ -58,6 +59,7 @@ export function StagesPage() {
     <Stack>
       <Title order={2}>ステージ分析</Title>
       <FilterBar filter={search} navigateTo={{ to: '/stages' }} />
+      <QueryError error={error} />
       {isLoading ? (
         <Loader />
       ) : (

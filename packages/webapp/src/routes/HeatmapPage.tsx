@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useSearch, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { FilterBar } from '../components/FilterBar';
+import { QueryError } from '../components/QueryError';
 import { useManifest } from '../hooks/useManifest';
 import { buildWhere } from '../lib/filter';
 import { query } from '../lib/duckdb/query';
@@ -21,7 +22,7 @@ export function HeatmapPage() {
   const [layer, setLayer] = useState<'PlayerMoved' | 'PlantPlaced'>('PlayerMoved');
   const filterKey = JSON.stringify(search);
 
-  const { data: cells, isLoading } = useQuery({
+  const { data: cells, isLoading, error } = useQuery({
     queryKey: ['heatmap', layer, filterKey, manifest?.generatedAt],
     enabled: !!manifest && manifest.datasets.length > 0,
     queryFn: async () => {
@@ -55,6 +56,7 @@ export function HeatmapPage() {
         filter={search}
         navigateTo={{ to: '/heatmap' }}
       />
+      <QueryError error={error} />
       <Group>
         <SegmentedControl
           value={layer}

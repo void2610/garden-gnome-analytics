@@ -2,6 +2,7 @@ import { Badge, Card, Group, Loader, Stack, Table, Text, Title } from '@mantine/
 import { useQuery } from '@tanstack/react-query';
 import { Link, useSearch } from '@tanstack/react-router';
 import { FilterBar } from '../components/FilterBar';
+import { QueryError } from '../components/QueryError';
 import { useManifest } from '../hooks/useManifest';
 import { buildWhere } from '../lib/filter';
 import { query } from '../lib/duckdb/query';
@@ -20,7 +21,7 @@ export function ErrorsPage() {
   const { data: manifest } = useManifest();
   const filterKey = JSON.stringify(search);
 
-  const { data: rows, isLoading } = useQuery({
+  const { data: rows, isLoading, error } = useQuery({
     queryKey: ['errors-list', filterKey, manifest?.generatedAt],
     enabled: !!manifest && manifest.datasets.length > 0,
     queryFn: async () => {
@@ -47,6 +48,7 @@ export function ErrorsPage() {
     <Stack>
       <Title order={2}>エラー一覧</Title>
       <FilterBar filter={search} navigateTo={{ to: '/errors' }} />
+      <QueryError error={error} />
       {isLoading ? (
         <Loader />
       ) : (

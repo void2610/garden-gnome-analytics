@@ -26,6 +26,10 @@ export async function query<T = Record<string, unknown>>(sql: string): Promise<T
     const result = await conn.query(sql);
     const rows = result.toArray().map((r) => r.toJSON()) as Record<string, unknown>[];
     return rows.map(normalize) as T[];
+  } catch (e) {
+    // SQL とエラー内容を console に出して原因究明できるようにする
+    console.error('[duckdb query failed]', sql, e);
+    throw e;
   } finally {
     await conn.close();
   }

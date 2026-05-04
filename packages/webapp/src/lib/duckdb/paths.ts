@@ -1,34 +1,35 @@
 // public-data 配下の Parquet パスを解決する
-// 開発時/本番ともに base URL を経由した URL を返す
+// DuckDB-Wasm の httpfs は absolute URL を要求するため、必ず origin を付ける
 
 const BASE = import.meta.env.BASE_URL || '/';
+// SSR 時 (vitest) は origin を空文字でフォールバック
+const ORIGIN = typeof window !== 'undefined' ? window.location.origin : '';
 
-function withBase(path: string): string {
-  if (BASE.endsWith('/') && path.startsWith('/')) return BASE + path.slice(1);
-  if (!BASE.endsWith('/') && !path.startsWith('/')) return `${BASE}/${path}`;
-  return BASE + path;
+function withOrigin(path: string): string {
+  let p = path;
+  if (BASE.endsWith('/') && p.startsWith('/')) p = BASE + p.slice(1);
+  else if (!BASE.endsWith('/') && !p.startsWith('/')) p = `${BASE}/${p}`;
+  else p = BASE + p;
+  return ORIGIN + p;
 }
 
 export function manifestUrl(): string {
-  return withBase('manifest.json');
+  // manifest は fetch() で取得するので origin 無しでも問題ないが、揃えておく
+  return withOrigin('manifest.json');
 }
 
-// SQL の中で使うため URL ではなく相対パスとして扱う場合がある
-// DuckDB-Wasm の httpfs では完全な URL を要求するため、ここでは absolute URL を返す
 export function eventsParquetUrl(eventSlug: string, deviceSlug: string): string {
-  return withBase(`events/event=${eventSlug}/device=${deviceSlug}/data.parquet`);
+  return withOrigin(`events/event=${eventSlug}/device=${deviceSlug}/data.parquet`);
 }
 
 export function runsParquetUrl(eventSlug: string, deviceSlug: string): string {
-  return withBase(`runs/event=${eventSlug}/device=${deviceSlug}/data.parquet`);
+  return withOrigin(`runs/event=${eventSlug}/device=${deviceSlug}/data.parquet`);
 }
 
 export function errorsParquetUrl(eventSlug: string, deviceSlug: string): string {
-  return withBase(`errors/event=${eventSlug}/device=${deviceSlug}/data.parquet`);
+  return withOrigin(`errors/event=${eventSlug}/device=${deviceSlug}/data.parquet`);
 }
 
-// 全パーティション一括の glob パターン (DuckDB-Wasm の httpfs はワイルドカード非対応のため、
-// クエリ層では manifest を見て個別 URL の UNION ALL を組む)
 export function eventsAllParquetUrls(
   datasets: Array<{ eventSlug: string; deviceSlug: string }>,
 ): string[] {
@@ -49,7 +50,7 @@ export function errorsAllParquetUrls(
 
 // SQL で複数 Parquet を読む際の擬似 read_parquet(['url1','url2']) を組み立てる
 export function readParquetSql(urls: string[]): string {
-  if (urls.length === 0) return "(SELECT NULL WHERE FALSE)";
+  if (urls.length === 0) return '(SELECT NULL WHERE FALSE)';
   const list = urls.map((u) => `'${u.replace(/'/g, "''")}'`).join(', ');
   return `read_parquet([${list}], union_by_name=true)`;
 }
