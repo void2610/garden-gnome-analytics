@@ -1,6 +1,6 @@
 // 汎用のソート可能テーブル
-// columns で各列のキーとラベル・accessor を指定すると、列ヘッダクリックで昇順/降順を切替できる
-// Shift + クリックで複数キーソート（クリック順に優先度が積み上がる）
+// 各列を独立にトグル: クリックで none → 昇順 → 降順 → none を循環
+// 複数列が同時に有効なときは、列の左→右の順を優先度として並び替える
 import { Card, Table, UnstyledButton } from '@mantine/core';
 import { IconArrowsSort, IconSortAscending, IconSortDescending } from '@tabler/icons-react';
 import { useMemo, useState, type ReactNode } from 'react';
@@ -16,18 +16,14 @@ export interface SortableColumn<TRow> {
 }
 
 type Direction = 'asc' | 'desc';
-
-export interface SortKey {
-  key: string;
-  direction: Direction;
-}
+type DirState = Direction | null;
 
 export interface SortableTableProps<TRow> {
   columns: SortableColumn<TRow>[];
   rows: TRow[];
   rowKey: (row: TRow, index: number) => string;
-  // 既定のソート（複数指定可、配列の先頭ほど優先）
-  defaultSort?: SortKey | SortKey[];
+  // 初期ソート: 列キー → 方向 のマップ
+  defaultSort?: Record<string, Direction>;
   onRowClick?: (row: TRow) => void;
 }
 
@@ -38,53 +34,38 @@ export function SortableTable<TRow>({
   defaultSort,
   onRowClick,
 }: SortableTableProps<TRow>) {
-  const initial: SortKey[] = useMemo(() => {
-    if (!defaultSort) return [];
-    return Array.isArray(defaultSort) ? defaultSort : [defaultSort];
-  }, [defaultSort]);
-  const [sort, setSort] = useState<SortKey[]>(initial);
+  const [dirs, setDirs] = useState<Record<string, DirState>>(() => ({
+    ...(defaultSort ?? {}),
+  }));
 
-  function toggle(key: string, e: { shiftKey: boolean }) {
+  function toggle(key: string) {
     const col = columns.find((c) => c.key === key);
-    const defaultDir: Direction = col?.numeric ? 'desc' : 'asc';
-
-    if (e.shiftKey) {
-      // 複数キーソート: 既存末尾に追加、または同じキーなら方向反転 / 削除
-      setSort((prev) => {
-        const idx = prev.findIndex((s) => s.key === key);
-        if (idx < 0) return [...prev, { key, direction: defaultDir }];
-        const cur = prev[idx];
-        // cur は idx で取得しているので必ず存在
-        if (cur && cur.direction === defaultDir) {
-          // 反対方向に切替
-          const next = [...prev];
-          next[idx] = { key, direction: defaultDir === 'asc' ? 'desc' : 'asc' };
-          return next;
-        }
-        // 反対方向まで来たので削除（3 段階目で外す）
-        return prev.filter((s) => s.key !== key);
-      });
-      return;
-    }
-
-    // 単一キーソート: 既に同じキーなら方向反転、別キーなら新規
-    setSort((prev) => {
-      if (prev.length === 1 && prev[0]?.key === key) {
-        return [
-          {
-            key,
-            direction: prev[0].direction === 'asc' ? 'desc' : 'asc',
-          },
-        ];
-      }
-      return [{ key, direction: defaultDir }];
+    const initial: Direction = col?.numeric ? 'desc' : 'asc';
+    setDirs((prev) => {
+      const cur = prev[key] ?? null;
+      // none → 初期方向 → 反対方向 → none を循環
+      let next: DirState;
+      if (cur === null) next = initial;
+      else if (cur === initial) next = initial === 'asc' ? 'desc' : 'asc';
+      else next = null;
+      // 値が null になるならキーごと消す
+      const out = { ...prev };
+      if (next === null) delete out[key];
+      else out[key] = next;
+      return out;
     });
   }
 
+  // 列の左→右順を優先度として、有効な並び替え列リストを作る
+  const activeSortKeys = useMemo(() => {
+    return columns
+      .map((c) => ({ key: c.key, direction: dirs[c.key] ?? null }))
+      .filter((s): s is { key: string; direction: Direction } => s.direction !== null);
+  }, [columns, dirs]);
+
   const sorted = useMemo(() => {
-    if (sort.length === 0) return rows;
-    // 各 sort key の比較関数を事前ビルド
-    const keyFns = sort.map((s) => {
+    if (activeSortKeys.length === 0) return rows;
+    const keyFns = activeSortKeys.map((s) => {
       const col = columns.find((c) => c.key === s.key);
       const acc =
         col?.accessor ??
@@ -100,7 +81,6 @@ export function SortableTable<TRow>({
       for (const k of keyFns) {
         const va = k.acc(a);
         const vb = k.acc(b);
-        // null/undefined は方向に関わらず常に末尾
         if (va == null && vb == null) continue;
         if (va == null) return 1;
         if (vb == null) return -1;
@@ -118,14 +98,14 @@ export function SortableTable<TRow>({
       }
       return 0;
     });
-  }, [rows, columns, sort]);
+  }, [rows, columns, activeSortKeys]);
 
-  // 各列の現在のソート優先度を Map にしておく
-  const sortIndex = useMemo(() => {
-    const m = new Map<string, { order: number; direction: Direction }>();
-    sort.forEach((s, i) => m.set(s.key, { order: i + 1, direction: s.direction }));
+  // 各列の現在の優先度（複数キーが有効な時のみバッジ表示）
+  const priorityByKey = useMemo(() => {
+    const m = new Map<string, number>();
+    activeSortKeys.forEach((s, i) => m.set(s.key, i + 1));
     return m;
-  }, [sort]);
+  }, [activeSortKeys]);
 
   return (
     <Card withBorder p="xs" style={{ overflowX: 'auto' }}>
@@ -133,16 +113,21 @@ export function SortableTable<TRow>({
         <Table.Thead>
           <Table.Tr>
             {columns.map((c) => {
-              const cur = sortIndex.get(c.key);
+              const direction = dirs[c.key] ?? null;
+              const priority = priorityByKey.get(c.key);
               return (
                 <Table.Th key={c.key} style={{ textAlign: c.align ?? 'left' }}>
                   <UnstyledButton
-                    onClick={(e) => toggle(c.key, { shiftKey: e.shiftKey })}
-                    title="クリック: 単一ソート / Shift+クリック: 複数キーに追加"
+                    onClick={() => toggle(c.key)}
+                    title="クリックでソート切替 (none → 昇順 → 降順 → none)"
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
                   >
                     <span>{c.label}</span>
-                    <SortIcon current={cur} multi={sort.length > 1} />
+                    <SortIcon
+                      direction={direction}
+                      priority={priority}
+                      showPriority={activeSortKeys.length > 1}
+                    />
                   </UnstyledButton>
                 </Table.Th>
               );
@@ -178,18 +163,20 @@ export function SortableTable<TRow>({
 }
 
 function SortIcon({
-  current,
-  multi,
+  direction,
+  priority,
+  showPriority,
 }: {
-  current: { order: number; direction: Direction } | undefined;
-  multi: boolean;
+  direction: DirState;
+  priority: number | undefined;
+  showPriority: boolean;
 }) {
-  if (!current) return <IconArrowsSort size={14} opacity={0.4} />;
-  const Arrow = current.direction === 'asc' ? IconSortAscending : IconSortDescending;
+  if (!direction) return <IconArrowsSort size={14} opacity={0.4} />;
+  const Arrow = direction === 'asc' ? IconSortAscending : IconSortDescending;
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
       <Arrow size={14} />
-      {multi && (
+      {showPriority && priority != null && (
         <span
           style={{
             fontSize: 10,
@@ -200,7 +187,7 @@ function SortIcon({
             lineHeight: 1.4,
           }}
         >
-          {current.order}
+          {priority}
         </span>
       )}
     </span>
