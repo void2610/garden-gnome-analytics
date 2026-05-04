@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-05-04T11:32:34.708Z",
+  "datasets": [
+    {
+      "eventSlug": "gemudan12-demo-2026-05",
+      "deviceSlug": "macbook-pro",
+      "meta": {
+        "event": "ゲムダン12 デモ展示",
+        "event_date": "2026-05-03",
+        "venue": "ゲムダン12 会場",
+        "device": "MacBook Pro 14\"",
+        "game_version": "0.2.x",
+        "notes": "MacBook Pro 14\" 機材での収録ログ"
+      },
+      "runCount": 37,
+      "eventCount": 4971,
+      "errorCount": 519,
+      "period": {
+        "from": "2026-05-03T01:30:49.645Z",
+        "to": "2026-05-03T07:59:38.448Z"
+      }
+    },
+    {
+      "eventSlug": "gemudan12-demo-2026-05",
+      "deviceSlug": "steamdeck",
+      "meta": {
+        "event": "ゲムダン12 デモ展示",
+        "event_date": "2026-05-03",
+        "venue": "ゲムダン12 会場",
+        "device": "Steam Deck",
+        "game_version": "0.2.x",
+        "notes": "Steam Deck 機材での収録ログ"
+      },
+      "runCount": 66,
+      "eventCount": 9664,
+      "errorCount": 2299,
+      "period": {
+        "from": "2026-05-02T12:09:54.584Z",
+        "to": "2026-05-03T07:59:38.448Z"
+      }
+    }
+  ]
+}

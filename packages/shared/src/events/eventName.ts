@@ -24,6 +24,9 @@ export const EventNameSchema = z.enum([
   'TreasureCollected',
   'StageEventSelected',
   'CultivationResult',
+  'ItemUsed',
+  'RewardSkipped',
+  'BattleLose',
 ]);
 
 export type EventName = z.infer<typeof EventNameSchema>;

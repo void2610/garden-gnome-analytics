@@ -25,6 +25,9 @@ export const RunEventBodySchema = z.discriminatedUnion('event', [
   RUN_EVENT_SCHEMAS[19],
   RUN_EVENT_SCHEMAS[20],
   RUN_EVENT_SCHEMAS[21],
+  RUN_EVENT_SCHEMAS[22],
+  RUN_EVENT_SCHEMAS[23],
+  RUN_EVENT_SCHEMAS[24],
 ]);
 
 export type RunEventBody = z.infer<typeof RunEventBodySchema>;

@@ -144,6 +144,24 @@ export const CultivationResultSchema = evt('CultivationResult', {
   toStage: z.string().optional(),
 });
 
+export const ItemUsedSchema = evt('ItemUsed', {
+  itemName: z.string().optional(),
+  itemType: z.string().optional(),
+});
+
+export const RewardSkippedSchema = evt('RewardSkipped', {
+  type: z.string().optional(),
+  choices: z.string().optional(),
+});
+
+export const BattleLoseSchema = evt('BattleLose', {
+  turnCount: intFromString.optional(),
+  remainHp: intFromString.optional(),
+  maxHp: intFromString.optional(),
+  killedEnemies: intFromString.optional(),
+  elapsedTime: z.string().optional(),
+});
+
 export const RUN_EVENT_SCHEMAS = [
   SessionStartSchema,
   SessionEndSchema,
@@ -167,6 +185,9 @@ export const RUN_EVENT_SCHEMAS = [
   TreasureCollectedSchema,
   StageEventSelectedSchema,
   CultivationResultSchema,
+  ItemUsedSchema,
+  RewardSkippedSchema,
+  BattleLoseSchema,
 ] as const;
 
 // 数値文字列を保持するための helper
