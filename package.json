@@ -1,0 +1,25 @@
+{
+  "name": "garden-gnome-analytics",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r --parallel typecheck",
+    "test": "pnpm -r --parallel test",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "build": "pnpm -F @gga/shared build && pnpm -F @gga/parser build && pnpm -F @gga/webapp build",
+    "ingest": "pnpm -F @gga/parser ingest",
+    "dev": "pnpm -F @gga/webapp dev"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "typescript": "^5.6.3"
+  }
+}

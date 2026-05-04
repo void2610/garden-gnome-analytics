@@ -1,6 +1,9 @@
 # データ実体（メタデータYAMLのみコミット、ログ本体はサイズ大なので除外）
-data/**/*.log
-data/**/*.json
+data/**
+!data/.gitkeep
+!data/README.md
+!data/*/
+!data/*/*/
 !data/**/meta.yaml
 
 # 生成物
@@ -9,8 +12,9 @@ build/
 node_modules/
 .parcel-cache/
 .vite/
+*.tsbuildinfo
 
-# Pythonキャッシュ（前処理にPythonを使う場合）
+# Pythonキャッシュ
 __pycache__/
 *.pyc
 .venv/
@@ -26,3 +30,6 @@ __pycache__/
 .idea/
 .vscode/
 *.swp
+
+# pnpm
+.pnpm-store/
