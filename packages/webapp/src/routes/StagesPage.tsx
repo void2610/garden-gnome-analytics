@@ -168,7 +168,7 @@ export function StagesPage() {
           SUM(CASE WHEN event_type = 'StageEnter' THEN 1 ELSE 0 END)::INTEGER AS reach_count,
           SUM(CASE WHEN event_type = 'BattleWin' THEN 1 ELSE 0 END)::INTEGER AS win_count,
           SUM(CASE WHEN event_type = 'BattleLose' THEN 1 ELSE 0 END)::INTEGER AS loss_count,
-          -- BattleLose イベントが発火されないままログが終わるケースを「未決着」として算出
+          -- 戦闘途中で run のログが途切れた (アプリ強制終了等) ケースを「未決着」として算出
           (
             SUM(CASE WHEN event_type = 'StageEnter' THEN 1 ELSE 0 END)
             - SUM(CASE WHEN event_type = 'BattleWin' THEN 1 ELSE 0 END)
@@ -196,8 +196,8 @@ export function StagesPage() {
       <Title order={2}>ステージ分析</Title>
       <Text c="dimmed" size="sm">
         ステージ種別ごとの到達回数。戦闘ステージは勝敗・ターン・HP・所要時間も集計。
-        「未決着」= ログ仕様上 BattleLose イベントが記録されなかったケース
-        (アプリ強制終了 / 撤退 / 戦闘途中で run 終了)
+        「未決着」= 戦闘途中で run のログが途切れたケース (アプリ強制終了 /
+        次の客のためのリセット等)。HP=0 まで普通にプレイした場合は敗北として記録される。
       </Text>
       <FilterBar filter={search} navigateTo={{ to: '/stages' }} />
       <QueryError error={error} />
