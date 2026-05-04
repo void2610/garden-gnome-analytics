@@ -1,11 +1,12 @@
-import { Badge, Card, Group, Loader, Stack, Table, Text, Title } from '@mantine/core';
+import { Badge, Loader, Stack, Text, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useSearch } from '@tanstack/react-router';
 import { FilterBar } from '../components/FilterBar';
 import { QueryError } from '../components/QueryError';
+import { SortableTable, type SortableColumn } from '../components/SortableTable';
 import { useManifest } from '../hooks/useManifest';
-import { buildWhere } from '../lib/filter';
 import { query } from '../lib/duckdb/query';
+import { buildWhere } from '../lib/filter';
 import { errorsFrom } from '../queries/runsParquet';
 
 interface ErrorRow {
@@ -15,6 +16,54 @@ interface ErrorRow {
   run_id: string | null;
   count: number;
 }
+
+const COLUMNS: SortableColumn<ErrorRow>[] = [
+  {
+    key: 'level',
+    label: 'level',
+    accessor: (r) => r.level,
+    render: (r) => (
+      <Badge color={r.level === 'Exception' ? 'red' : 'orange'}>{r.level}</Badge>
+    ),
+  },
+  { key: 'count', label: '件数', accessor: (r) => r.count, numeric: true, align: 'right' },
+  {
+    key: 'message',
+    label: 'メッセージ',
+    accessor: (r) => r.message,
+    render: (r) => (
+      <span
+        style={{
+          display: 'inline-block',
+          maxWidth: 480,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          verticalAlign: 'bottom',
+        }}
+        title={r.message}
+      >
+        {r.message}
+      </span>
+    ),
+  },
+  {
+    key: 'run_id',
+    label: '例: 関連 run',
+    accessor: (r) => r.run_id ?? '',
+    render: (r) =>
+      r.run_id ? (
+        <Link
+          // biome-ignore lint/suspicious/noExplicitAny: 動的 params の型推論が router 循環で効かない
+          {...({ to: '/runs/$runId', params: { runId: r.run_id } } as any)}
+        >
+          {r.run_id}
+        </Link>
+      ) : (
+        <Text c="dimmed">-</Text>
+      ),
+  },
+];
 
 export function ErrorsPage() {
   const search = useSearch({ from: '/errors' });
@@ -52,42 +101,12 @@ export function ErrorsPage() {
       {isLoading ? (
         <Loader />
       ) : (
-        <Card withBorder p="xs" style={{ overflowX: 'auto' }}>
-          <Table striped highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>level</Table.Th>
-                <Table.Th>件数</Table.Th>
-                <Table.Th>メッセージ</Table.Th>
-                <Table.Th>例: 関連 run</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {(rows ?? []).map((r, i) => (
-                <Table.Tr key={`${r.level}-${i}`}>
-                  <Table.Td>
-                    <Badge color={r.level === 'Exception' ? 'red' : 'orange'}>
-                      {r.level}
-                    </Badge>
-                  </Table.Td>
-                  <Table.Td>{r.count}</Table.Td>
-                  <Table.Td style={{ maxWidth: 480, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {r.message}
-                  </Table.Td>
-                  <Table.Td>
-                    {r.run_id ? (
-                      <Link to="/runs/$runId" params={{ runId: r.run_id }}>
-                        {r.run_id}
-                      </Link>
-                    ) : (
-                      <Text c="dimmed">-</Text>
-                    )}
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Card>
+        <SortableTable
+          columns={COLUMNS}
+          rows={rows ?? []}
+          rowKey={(r, i) => `${r.level}-${i}`}
+          defaultSort={{ key: 'count', direction: 'desc' }}
+        />
       )}
       {rows && rows.length === 0 && <Text c="dimmed">エラーなし</Text>}
     </Stack>

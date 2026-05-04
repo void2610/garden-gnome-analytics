@@ -1,11 +1,12 @@
-import { Card, Loader, Stack, Table, Text, Title } from '@mantine/core';
+import { Loader, Stack, Text, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { FilterBar } from '../components/FilterBar';
 import { QueryError } from '../components/QueryError';
+import { SortableTable, type SortableColumn } from '../components/SortableTable';
 import { useManifest } from '../hooks/useManifest';
-import { buildWhere } from '../lib/filter';
 import { query } from '../lib/duckdb/query';
+import { buildWhere } from '../lib/filter';
 import { eventsFrom } from '../queries/runsParquet';
 
 interface StageStat {
@@ -15,6 +16,35 @@ interface StageStat {
   loss_count: number;
   avg_turns: number | null;
 }
+
+const COLUMNS: SortableColumn<StageStat>[] = [
+  { key: 'stage_id', label: 'stageId', accessor: (r) => r.stage_id },
+  { key: 'reach_count', label: '到達数', accessor: (r) => r.reach_count, numeric: true, align: 'right' },
+  { key: 'win_count', label: '勝利数', accessor: (r) => r.win_count, numeric: true, align: 'right' },
+  { key: 'loss_count', label: '敗北数', accessor: (r) => r.loss_count, numeric: true, align: 'right' },
+  {
+    key: 'avg_turns',
+    label: '平均ターン数',
+    accessor: (r) => r.avg_turns,
+    render: (r) => (r.avg_turns != null ? r.avg_turns.toFixed(1) : '-'),
+    numeric: true,
+    align: 'right',
+  },
+  {
+    key: 'win_rate',
+    label: '勝率',
+    accessor: (r) => {
+      const total = r.win_count + r.loss_count;
+      return total > 0 ? r.win_count / total : null;
+    },
+    render: (r) => {
+      const total = r.win_count + r.loss_count;
+      return total > 0 ? `${((r.win_count / total) * 100).toFixed(1)}%` : '-';
+    },
+    numeric: true,
+    align: 'right',
+  },
+];
 
 export function StagesPage() {
   const search = useSearch({ from: '/stages' });
@@ -63,36 +93,12 @@ export function StagesPage() {
       {isLoading ? (
         <Loader />
       ) : (
-        <Card withBorder p="xs" style={{ overflowX: 'auto' }}>
-          <Table striped highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>stageId</Table.Th>
-                <Table.Th>到達数</Table.Th>
-                <Table.Th>勝利数</Table.Th>
-                <Table.Th>敗北数</Table.Th>
-                <Table.Th>平均ターン数</Table.Th>
-                <Table.Th>勝率</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {(rows ?? []).map((r) => {
-                const total = r.win_count + r.loss_count;
-                const winRate = total > 0 ? ((r.win_count / total) * 100).toFixed(1) : '-';
-                return (
-                  <Table.Tr key={r.stage_id}>
-                    <Table.Td>{r.stage_id}</Table.Td>
-                    <Table.Td>{r.reach_count}</Table.Td>
-                    <Table.Td>{r.win_count}</Table.Td>
-                    <Table.Td>{r.loss_count}</Table.Td>
-                    <Table.Td>{r.avg_turns?.toFixed(1) ?? '-'}</Table.Td>
-                    <Table.Td>{winRate}%</Table.Td>
-                  </Table.Tr>
-                );
-              })}
-            </Table.Tbody>
-          </Table>
-        </Card>
+        <SortableTable
+          columns={COLUMNS}
+          rows={rows ?? []}
+          rowKey={(r) => r.stage_id}
+          defaultSort={{ key: 'reach_count', direction: 'desc' }}
+        />
       )}
       {rows && rows.length === 0 && <Text c="dimmed">該当するステージなし</Text>}
     </Stack>

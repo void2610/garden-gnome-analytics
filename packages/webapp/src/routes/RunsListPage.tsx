@@ -1,19 +1,12 @@
-import {
-  Badge,
-  Card,
-  Loader,
-  Stack,
-  Table,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Badge, Loader, Stack, Text, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useSearch } from '@tanstack/react-router';
 import { FilterBar } from '../components/FilterBar';
 import { QueryError } from '../components/QueryError';
+import { SortableTable, type SortableColumn } from '../components/SortableTable';
 import { useManifest } from '../hooks/useManifest';
-import { buildWhereRuns } from '../lib/filter';
 import { query } from '../lib/duckdb/query';
+import { buildWhereRuns } from '../lib/filter';
 import { runsFrom } from '../queries/runsParquet';
 
 interface RunRow {
@@ -28,6 +21,59 @@ interface RunRow {
   max_hp: number | null;
   final_deck_size: number | null;
 }
+
+const COLUMNS: SortableColumn<RunRow>[] = [
+  {
+    key: 'started_at',
+    label: '開始時刻',
+    accessor: (r) => r.started_at,
+    render: (r) => (
+      <Link
+        // biome-ignore lint/suspicious/noExplicitAny: 動的 params の型推論が router 循環で効かない
+        {...({ to: '/runs/$runId', params: { runId: r.run_id } } as any)}
+        style={{ textDecoration: 'none' }}
+      >
+        {r.started_at ? new Date(r.started_at).toLocaleString('ja-JP') : '-'}
+      </Link>
+    ),
+  },
+  { key: 'device_slug', label: '機器', accessor: (r) => r.device_slug },
+  {
+    key: 'duration_sec',
+    label: '長さ (秒)',
+    accessor: (r) => r.duration_sec,
+    render: (r) =>
+      r.duration_sec != null ? Math.round(r.duration_sec).toLocaleString('ja-JP') : '-',
+    numeric: true,
+    align: 'right',
+  },
+  { key: 'stage_count', label: 'ステージ', accessor: (r) => r.stage_count, numeric: true, align: 'right' },
+  {
+    key: 'outcome',
+    label: '勝敗',
+    accessor: (r) => r.outcome,
+    render: (r) => (
+      <Badge color={outcomeColor(r.outcome)} variant="light">
+        {r.outcome}
+      </Badge>
+    ),
+  },
+  {
+    key: 'final_hp',
+    label: 'HP',
+    accessor: (r) => r.final_hp,
+    render: (r) => `${r.final_hp ?? '-'} / ${r.max_hp ?? '-'}`,
+    numeric: true,
+    align: 'right',
+  },
+  {
+    key: 'final_deck_size',
+    label: 'デッキサイズ',
+    accessor: (r) => r.final_deck_size,
+    numeric: true,
+    align: 'right',
+  },
+];
 
 export function RunsListPage() {
   const search = useSearch({ from: '/runs' });
@@ -64,54 +110,12 @@ export function RunsListPage() {
       {isLoading ? (
         <Loader />
       ) : (
-        <Card withBorder p="xs" style={{ overflowX: 'auto' }}>
-          <Table striped highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>開始時刻</Table.Th>
-                <Table.Th>機器</Table.Th>
-                <Table.Th>長さ (秒)</Table.Th>
-                <Table.Th>ステージ</Table.Th>
-                <Table.Th>勝敗</Table.Th>
-                <Table.Th>HP</Table.Th>
-                <Table.Th>デッキサイズ</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {(rows ?? []).map((r) => (
-                <Table.Tr key={r.run_id}>
-                  <Table.Td>
-                    <Link
-                      to="/runs/$runId"
-                      params={{ runId: r.run_id }}
-                      style={{ textDecoration: 'none' }}
-                    >
-                      {r.started_at
-                        ? new Date(r.started_at).toLocaleString('ja-JP')
-                        : '-'}
-                    </Link>
-                  </Table.Td>
-                  <Table.Td>{r.device_slug}</Table.Td>
-                  <Table.Td>
-                    {r.duration_sec != null
-                      ? Math.round(r.duration_sec).toLocaleString('ja-JP')
-                      : '-'}
-                  </Table.Td>
-                  <Table.Td>{r.stage_count}</Table.Td>
-                  <Table.Td>
-                    <Badge color={outcomeColor(r.outcome)} variant="light">
-                      {r.outcome}
-                    </Badge>
-                  </Table.Td>
-                  <Table.Td>
-                    {r.final_hp ?? '-'} / {r.max_hp ?? '-'}
-                  </Table.Td>
-                  <Table.Td>{r.final_deck_size ?? '-'}</Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Card>
+        <SortableTable
+          columns={COLUMNS}
+          rows={rows ?? []}
+          rowKey={(r) => r.run_id}
+          defaultSort={{ key: 'started_at', direction: 'desc' }}
+        />
       )}
     </Stack>
   );

@@ -1,8 +1,9 @@
-import { Card, Loader, Stack, Table, Tabs, Text, Title } from '@mantine/core';
+import { Loader, Stack, Tabs, Text, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { FilterBar } from '../components/FilterBar';
 import { QueryError } from '../components/QueryError';
+import { SortableTable, type SortableColumn } from '../components/SortableTable';
 import { useManifest } from '../hooks/useManifest';
 import { buildWhere } from '../lib/filter';
 import { query } from '../lib/duckdb/query';
@@ -150,84 +151,95 @@ export function CardsPage() {
           {usageLoading ? (
             <Loader />
           ) : (
-            <Card withBorder p="xs" style={{ overflowX: 'auto' }}>
-              <Table striped highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>カード名</Table.Th>
-                    <Table.Th>成長段階</Table.Th>
-                    <Table.Th>使用回数</Table.Th>
-                    <Table.Th>出現ラン数</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {(usage ?? []).map((r) => (
-                    <Table.Tr key={`${r.card_name}-${r.growth_stage}`}>
-                      <Table.Td>{r.card_name}</Table.Td>
-                      <Table.Td>{r.growth_stage}</Table.Td>
-                      <Table.Td>{r.use_count.toLocaleString('ja-JP')}</Table.Td>
-                      <Table.Td>{r.run_count}</Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Card>
+            <SortableTable
+              columns={USAGE_COLUMNS}
+              rows={usage ?? []}
+              rowKey={(r) => `${r.card_name}-${r.growth_stage}`}
+              defaultSort={{ key: 'use_count', direction: 'desc' }}
+            />
           )}
         </Tabs.Panel>
 
         <Tabs.Panel value="pick" pt="sm">
-          <Card withBorder p="xs" style={{ overflowX: 'auto' }}>
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>カード</Table.Th>
-                  <Table.Th>提示回数</Table.Th>
-                  <Table.Th>選択回数</Table.Th>
-                  <Table.Th>選択率 %</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {(pickRate ?? []).map((r) => (
-                  <Table.Tr key={r.card}>
-                    <Table.Td>{r.card}</Table.Td>
-                    <Table.Td>{r.shown}</Table.Td>
-                    <Table.Td>{r.picked}</Table.Td>
-                    <Table.Td>{r.pick_rate_pct?.toFixed?.(1) ?? r.pick_rate_pct}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Card>
+          <SortableTable
+            columns={PICK_COLUMNS}
+            rows={pickRate ?? []}
+            rowKey={(r) => r.card}
+            defaultSort={{ key: 'shown', direction: 'desc' }}
+          />
         </Tabs.Panel>
 
         <Tabs.Panel value="outcome" pt="sm">
           <Text c="dimmed" size="sm">
             ラン全体の勝敗別カード使用回数 (合計 5 回以上)
           </Text>
-          <Card withBorder p="xs" mt="xs" style={{ overflowX: 'auto' }}>
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>カード名</Table.Th>
-                  <Table.Th>合計使用</Table.Th>
-                  <Table.Th>win 使用</Table.Th>
-                  <Table.Th>loss 使用</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {(outcomeDiff ?? []).map((r) => (
-                  <Table.Tr key={r.card_name}>
-                    <Table.Td>{r.card_name}</Table.Td>
-                    <Table.Td>{r.total_uses}</Table.Td>
-                    <Table.Td>{r.uses_in_win}</Table.Td>
-                    <Table.Td>{r.uses_in_loss}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Card>
+          <div style={{ marginTop: 8 }}>
+            <SortableTable
+              columns={OUTCOME_COLUMNS}
+              rows={outcomeDiff ?? []}
+              rowKey={(r) => r.card_name}
+              defaultSort={{ key: 'total_uses', direction: 'desc' }}
+            />
+          </div>
         </Tabs.Panel>
       </Tabs>
     </Stack>
   );
 }
+
+interface UsageRow {
+  card_name: string;
+  growth_stage: string;
+  use_count: number;
+  run_count: number;
+}
+
+const USAGE_COLUMNS: SortableColumn<UsageRow>[] = [
+  { key: 'card_name', label: 'カード名', accessor: (r) => r.card_name },
+  { key: 'growth_stage', label: '成長段階', accessor: (r) => r.growth_stage },
+  {
+    key: 'use_count',
+    label: '使用回数',
+    accessor: (r) => r.use_count,
+    render: (r) => r.use_count.toLocaleString('ja-JP'),
+    numeric: true,
+    align: 'right',
+  },
+  { key: 'run_count', label: '出現ラン数', accessor: (r) => r.run_count, numeric: true, align: 'right' },
+];
+
+interface PickRow {
+  card: string;
+  shown: number;
+  picked: number;
+  pick_rate_pct: number;
+}
+
+const PICK_COLUMNS: SortableColumn<PickRow>[] = [
+  { key: 'card', label: 'カード', accessor: (r) => r.card },
+  { key: 'shown', label: '提示回数', accessor: (r) => r.shown, numeric: true, align: 'right' },
+  { key: 'picked', label: '選択回数', accessor: (r) => r.picked, numeric: true, align: 'right' },
+  {
+    key: 'pick_rate_pct',
+    label: '選択率 %',
+    accessor: (r) => r.pick_rate_pct,
+    render: (r) =>
+      typeof r.pick_rate_pct === 'number' ? r.pick_rate_pct.toFixed(1) : String(r.pick_rate_pct),
+    numeric: true,
+    align: 'right',
+  },
+];
+
+interface OutcomeRow {
+  card_name: string;
+  total_uses: number;
+  uses_in_win: number;
+  uses_in_loss: number;
+}
+
+const OUTCOME_COLUMNS: SortableColumn<OutcomeRow>[] = [
+  { key: 'card_name', label: 'カード名', accessor: (r) => r.card_name },
+  { key: 'total_uses', label: '合計使用', accessor: (r) => r.total_uses, numeric: true, align: 'right' },
+  { key: 'uses_in_win', label: 'win 使用', accessor: (r) => r.uses_in_win, numeric: true, align: 'right' },
+  { key: 'uses_in_loss', label: 'loss 使用', accessor: (r) => r.uses_in_loss, numeric: true, align: 'right' },
+];
