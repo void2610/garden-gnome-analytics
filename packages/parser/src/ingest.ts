@@ -21,6 +21,8 @@ export interface IngestOptions {
   dev?: boolean;
   clean?: boolean;
   filter?: string; // event-slug でフィルタ
+  // message に部分一致したエラーログを取り込まない (case-sensitive)
+  excludeErrorPatterns?: string[];
   logger?: pino.Logger;
 }
 
@@ -57,6 +59,12 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
   const allErrors: ErrorRow[] = [];
   const manifestEntries: ManifestDataset[] = [];
   const warnings: string[] = scan.warnings.map((w) => `${w.path}: ${w.message}`);
+
+  // 全データセット共通の除外パターン (config/exclude_errors.yaml 由来)。
+  const excludePatterns = options.excludeErrorPatterns ?? [];
+  let totalErrorExcluded = 0;
+  const isErrorExcluded = (msg: string): boolean =>
+    excludePatterns.some((p) => p.length > 0 && msg.includes(p));
 
   for (const ds of datasets) {
     log.info(
@@ -180,6 +188,10 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
         if (e.level !== 'Error' && e.level !== 'Exception') continue;
         const t = e.date.getTime();
         if (t < start - 5000 || t > end + 5000) continue;
+        if (isErrorExcluded(e.message)) {
+          totalErrorExcluded += 1;
+          continue;
+        }
         allErrors.push({
           event_slug: ds.eventSlug,
           device_slug: ds.deviceSlug,
@@ -206,6 +218,10 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
       if (playHoursMin) {
         const min = jstMinutesOfDay(e.date);
         if (min < playHoursMin.start || min >= playHoursMin.end) continue;
+      }
+      if (isErrorExcluded(e.message)) {
+        totalErrorExcluded += 1;
+        continue;
       }
       // すでに run に紐付いた entry は重複しないように timestamp/level/message でユニーク扱い
       const dup = allErrors.find(
@@ -245,6 +261,11 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
     });
   }
 
+  if (excludePatterns.length > 0) {
+    log.info(
+      `除外パターン ${excludePatterns.length} 件で ${totalErrorExcluded} エラーを除外`,
+    );
+  }
   log.info(
     `writing parquet: events=${allEvents.length} runs=${allRuns.length} errors=${allErrors.length}`,
   );

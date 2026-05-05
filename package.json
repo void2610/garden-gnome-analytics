@@ -15,7 +15,7 @@
     "format": "biome format --write .",
     "format:check": "biome format .",
     "build": "pnpm -F @gga/shared build && pnpm -F @gga/parser build && pnpm -F @gga/webapp build",
-    "ingest": "pnpm -F @gga/parser ingest -- --data-dir ../../data --out ../../public-data",
+    "ingest": "pnpm -F @gga/parser ingest -- --data-dir ../../data --out ../../public-data --exclude-config ../../config/exclude_errors.yaml",
     "fetch-localization": "pnpm -F @gga/parser fetch-localization",
     "dev": "pnpm -F @gga/webapp dev"
   },

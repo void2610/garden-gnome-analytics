@@ -1,0 +1,8 @@
+# 全イベント共通で除外するエラーログのパターン。
+# normal log の Error / Exception レベルで、message にこのリスト中の文字列を
+# 1 つでも含むエントリは ingest 時にスキップされる (部分一致, case-sensitive)。
+patterns:
+  # Discord rich presence 連携の常時失敗ログ
+  - "Failed to update rich presence"
+  # Steamworks の SteamAPI_Init 失敗 (Steam クライアント未起動環境で必発)
+  - "[Steamworks.NET] SteamAPI_Init() failed."
