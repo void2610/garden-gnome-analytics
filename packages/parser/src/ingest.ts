@@ -200,6 +200,7 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
       eventSlug: ds.eventSlug,
       deviceSlug: ds.deviceSlug,
       meta: ds.meta,
+      eventMeta: ds.eventMeta,
       runCount: dsRunCount,
       eventCount: dsEventCount,
       errorCount: dsErrorCount,

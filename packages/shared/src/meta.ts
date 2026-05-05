@@ -18,3 +18,15 @@ export const MetaSchema = z.object({
 });
 
 export type Meta = z.infer<typeof MetaSchema>;
+
+// data/<event>/event.yaml のスキーマ。
+// イベント全体に紐付くメモを記述するためのオプションファイル。
+export const EventMetaSchema = z.object({
+  // 表示名 (省略時は配下の meta.yaml の event を採用)
+  name: z.string().optional(),
+  description: z.string().optional(),
+  // 任意で slug を上書き可能
+  slug: z.string().optional(),
+});
+
+export type EventMeta = z.infer<typeof EventMetaSchema>;

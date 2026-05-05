@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join, basename } from 'node:path';
 import fg from 'fast-glob';
 import { parse as parseYaml } from 'yaml';
-import { MetaSchema, type Meta } from '@gga/shared';
+import { MetaSchema, type Meta, EventMetaSchema, type EventMeta } from '@gga/shared';
 import { slugify } from './utils/slugify';
 
 export interface DatasetCandidate {
@@ -16,6 +16,8 @@ export interface DatasetCandidate {
   // 上書きを反映した実 slug
   eventSlug: string;
   deviceSlug: string;
+  // data/<event>/event.yaml が存在すればその内容
+  eventMeta?: EventMeta;
   runLogPaths: string[];
   normalLogPaths: string[];
 }
@@ -41,6 +43,30 @@ export async function scanDataDir(dataDir: string): Promise<ScanResult> {
     absolute: true,
   });
 
+  // event.yaml はイベントディレクトリ単位で 1 度だけ読む。
+  // dirPath をキーにキャッシュし、複数機器で共有する。
+  const eventMetaCache = new Map<string, EventMeta | undefined>();
+  const loadEventMeta = async (eventDir: string): Promise<EventMeta | undefined> => {
+    if (eventMetaCache.has(eventDir)) return eventMetaCache.get(eventDir);
+    const path = join(eventDir, 'event.yaml');
+    try {
+      const text = await readFile(path, 'utf8');
+      const obj = parseYaml(text);
+      const r = EventMetaSchema.safeParse(obj);
+      if (!r.success) {
+        warnings.push({ path, message: `event.yaml invalid: ${r.error.message}` });
+        eventMetaCache.set(eventDir, undefined);
+        return undefined;
+      }
+      eventMetaCache.set(eventDir, r.data);
+      return r.data;
+    } catch {
+      // event.yaml は省略可能
+      eventMetaCache.set(eventDir, undefined);
+      return undefined;
+    }
+  };
+
   for (const metaPath of metaPaths) {
     let meta: Meta;
     try {
@@ -62,11 +88,14 @@ export async function scanDataDir(dataDir: string): Promise<ScanResult> {
 
     const dirPath = dirname(metaPath);
     const deviceDirName = basename(dirPath);
-    const eventDirName = basename(dirname(dirPath));
+    const eventDir = dirname(dirPath);
+    const eventDirName = basename(eventDir);
+
+    const eventMeta = await loadEventMeta(eventDir);
 
     const defaultEventSlug = slugify(eventDirName) || slugify(meta.event);
     const defaultDeviceSlug = slugify(deviceDirName) || slugify(meta.device);
-    const eventSlug = meta.slug?.event ?? defaultEventSlug;
+    const eventSlug = eventMeta?.slug ?? meta.slug?.event ?? defaultEventSlug;
     const deviceSlug = meta.slug?.device ?? defaultDeviceSlug;
 
     const runLogPaths = await fg('run_*.log', {
@@ -88,6 +117,7 @@ export async function scanDataDir(dataDir: string): Promise<ScanResult> {
       defaultDeviceSlug,
       eventSlug,
       deviceSlug,
+      eventMeta,
       runLogPaths: runLogPaths.sort(),
       normalLogPaths: normalLogPaths.sort(),
     });

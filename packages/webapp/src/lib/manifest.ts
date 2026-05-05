@@ -13,6 +13,14 @@ export const ManifestDatasetSchema = z.object({
     game_version: z.string().optional(),
     notes: z.string().optional(),
   }),
+  // data/<event>/event.yaml の内容 (省略可)
+  eventMeta: z
+    .object({
+      name: z.string().optional(),
+      description: z.string().optional(),
+      slug: z.string().optional(),
+    })
+    .optional(),
   runCount: z.number(),
   eventCount: z.number(),
   errorCount: z.number(),

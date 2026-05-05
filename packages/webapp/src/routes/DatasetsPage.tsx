@@ -93,7 +93,7 @@ function groupByEvent(datasets: ManifestDataset[]): EventGroup[] {
     } else {
       map.set(d.eventSlug, {
         eventSlug: d.eventSlug,
-        eventName: d.meta.event,
+        eventName: d.eventMeta?.name ?? d.meta.event,
         eventDate: d.meta.event_date,
         venue: d.meta.venue,
         deviceCount: 1,

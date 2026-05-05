@@ -1,12 +1,14 @@
 // public-data/manifest.json を生成
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { Meta } from '@gga/shared';
+import type { EventMeta, Meta } from '@gga/shared';
 
 export interface ManifestDataset {
   eventSlug: string;
   deviceSlug: string;
   meta: Meta;
+  // 同一 eventSlug の全 dataset で同じ値が入る。data/<event>/event.yaml の内容。
+  eventMeta?: EventMeta;
   runCount: number;
   eventCount: number;
   errorCount: number;

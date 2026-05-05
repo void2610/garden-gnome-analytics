@@ -21,10 +21,15 @@ export function EventDetailPage() {
 
   return (
     <Stack>
-      <Title order={2}>{head.meta.event}</Title>
+      <Title order={2}>{head.eventMeta?.name ?? head.meta.event}</Title>
       <Text c="dimmed">
         {[head.meta.event_date, head.meta.venue].filter(Boolean).join(' / ') || '-'}
       </Text>
+      {head.eventMeta?.description && (
+        <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
+          {head.eventMeta.description}
+        </Text>
+      )}
       <SimpleGrid cols={{ base: 1, sm: 4 }} mt="md">
         <Card withBorder padding="md">
           <Text size="sm" c="dimmed">
