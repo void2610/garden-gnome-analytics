@@ -79,7 +79,7 @@ const heatmapRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'heatmap',
   validateSearch: filterSearchSchema.extend({
-    stageIds: z.array(z.string()).optional(),
+    stageId: z.string().optional(),
     layers: z.array(z.enum(['moves', 'presence', 'plants', 'paths'])).optional(),
     // run.started_at を Unix 秒で絞る (両端含む)
     timeFrom: z.number().optional(),

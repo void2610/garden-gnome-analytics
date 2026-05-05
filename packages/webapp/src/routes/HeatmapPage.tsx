@@ -2,9 +2,8 @@ import {
   Card,
   Checkbox,
   Group,
-  Loader,
-  MultiSelect,
   RangeSlider,
+  Select,
   Stack,
   Text,
   Title,
@@ -63,7 +62,7 @@ export function HeatmapPage() {
   const filterKey = JSON.stringify(search);
 
   const layers = search.layers ?? LAYER_DEFAULT;
-  const stageIds = search.stageIds ?? [];
+  const stageId = search.stageId;
 
   function update(patch: Partial<typeof search>) {
     navigate({
@@ -97,13 +96,12 @@ export function HeatmapPage() {
   });
 
   // 初期表示時に最も出現数の多いステージを自動選択
-  // (ステージ混合は意味がないため、URL に未指定なら強制的に 1 件入れる)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: stageIds.length は意図的
+  // biome-ignore lint/correctness/useExhaustiveDependencies: stageId は意図的に依存から除外
   useEffect(() => {
-    if (stageIds.length > 0) return;
+    if (stageId) return;
     if (!stageOptions || stageOptions.length === 0) return;
     const top = stageOptions[0];
-    if (top) update({ stageIds: [top.stage_id] });
+    if (top) update({ stageId: top.stage_id });
   }, [stageOptions]);
 
   // 時間スライダの取りうる範囲 (run.started_at の min/max)
@@ -131,9 +129,8 @@ export function HeatmapPage() {
   // 共通の WHERE 句生成: ステージ ID と時間スライダで絞る
   const whereFragments = useMemo(() => {
     const f: string[] = [];
-    if (stageIds.length > 0) {
-      const list = stageIds.map((s) => `'${s.replace(/'/g, "''")}'`).join(',');
-      f.push(`stage_id IN (${list})`);
+    if (stageId) {
+      f.push(`stage_id = '${stageId.replace(/'/g, "''")}'`);
     }
     if (search.timeFrom != null) {
       const ts = new Date(search.timeFrom * 1000).toISOString();
@@ -144,13 +141,13 @@ export function HeatmapPage() {
       f.push(`timestamp <= TIMESTAMP '${ts}'`);
     }
     return f.length > 0 ? `AND ${f.join(' AND ')}` : '';
-  }, [stageIds, search.timeFrom, search.timeTo]);
+  }, [stageId, search.timeFrom, search.timeTo]);
 
   // ヒートマップ用セル集計 (移動先/滞在頻度/配置)
   const { data: cellData, error: cellErr } = useQuery({
     queryKey: ['heatmap-cells', filterKey, layers.join(','), manifest?.generatedAt],
     enabled:
-      !!manifest && manifest.datasets.length > 0 && stageIds.length > 0,
+      !!manifest && manifest.datasets.length > 0 && !!stageId,
     queryFn: async () => {
       if (!manifest) return { moves: [], presence: [], plants: [] };
       const where = buildWhere(search);
@@ -221,7 +218,7 @@ export function HeatmapPage() {
       !!manifest &&
       manifest.datasets.length > 0 &&
       layers.includes('paths') &&
-      stageIds.length > 0,
+      !!stageId,
     queryFn: async () => {
       if (!manifest) return [];
       const where = buildWhere(search);
@@ -288,23 +285,22 @@ export function HeatmapPage() {
     <Stack>
       <Title order={2}>マップヒートマップ</Title>
       <Text c="dimmed" size="sm">
-        ステージごとに移動 / 配置 / 経路をマップ上に集計。各ステージはマップが
-        別なので、必ずステージを 1 つ以上選択してから表示する。
+        ステージ単位で移動 / 配置 / 経路をマップ上に集計。
       </Text>
       <FilterBar filter={search} navigateTo={{ to: '/heatmap' }} />
       <QueryError error={cellErr} />
 
       <Card withBorder padding="sm">
         <Stack gap="xs">
-          <MultiSelect
-            label="ステージ ID (必須)"
-            placeholder="ステージを選択してください"
-            description="複数選択可。ただし各ステージはマップが異なるため、種類が違うステージを混ぜると重ね合わせの絵は意味を持ちません"
+          <Select
+            label="ステージ ID"
+            placeholder="ステージを選択"
+            description="各ステージはマップが異なるため 1 つだけ選択する"
             data={stageSelectData}
-            value={stageIds}
-            onChange={(v) => update({ stageIds: v.length ? v : undefined })}
+            value={stageId ?? null}
+            onChange={(v) => update({ stageId: v ?? undefined })}
             searchable
-            clearable
+            allowDeselect={false}
           />
           <Group gap="md">
             {(Object.keys(LAYER_META) as LayerKey[]).map((k) => (
@@ -361,7 +357,7 @@ export function HeatmapPage() {
       </Card>
 
       <Card withBorder padding="md">
-        {stageIds.length === 0 ? (
+        {!stageId ? (
           <Text c="dimmed">ステージを選択してください</Text>
         ) : (
           <HeatmapSvg
