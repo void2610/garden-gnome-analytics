@@ -1,0 +1,4 @@
+# data/<event>/event.yaml
+# 同一イベント (event_slug = gemudan12-demo-2026-05) 全機器に紐付くメモ。
+description: |
+  ターンエンドボタンのタイミングにより進行不能になるバグがあった。20回くらい強制終了した気がする

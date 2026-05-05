@@ -5,6 +5,7 @@ data/**
 !data/*/
 !data/*/*/
 !data/**/meta.yaml
+!data/*/event.yaml
 
 # 生成物
 dist/
