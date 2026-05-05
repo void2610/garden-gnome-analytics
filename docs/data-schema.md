@@ -64,12 +64,20 @@ public-data/
     {
       "eventSlug": "...",
       "deviceSlug": "...",
-      "meta": { /* meta.yaml の中身 */ },
+      "meta": { /* data/<event>/<device>/meta.yaml の中身 */ },
+      "eventMeta": { /* data/<event>/event.yaml の中身 (省略可) */ },
       "runCount": 0,
       "eventCount": 0,
       "errorCount": 0,
-      "period": { "from": "ISO8601", "to": "ISO8601" }
+      "period": { "from": "ISO8601", "to": "ISO8601" },
+      // ログ中の BattleStart に mapName フィールドが含まれていれば true。
+      // 含まれない古いビルドでは false で、ヒートマップは表示されない。
+      "hasMapName": false
     }
   ]
 }
 ```
+
+`eventMeta` は同一 `eventSlug` 配下の全データセットで同値が入る (event.yaml は
+イベントディレクトリ単位で 1 度だけ読み込まれる)。詳細は
+[`docs/event-config.md`](event-config.md) を参照。

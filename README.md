@@ -34,7 +34,7 @@ pnpm dev
 # → http://localhost:5173/garden-gnome-analytics/
 ```
 
-`meta.yaml` の例:
+`meta.yaml` (機器単位、必須) の例:
 
 ```yaml
 event: ゲムダン12 デモ展示
@@ -44,6 +44,11 @@ device: MacBook Pro 14"
 game_version: 0.2.x
 notes: 学生中心の客層
 ```
+
+任意でイベント単位の `data/<event>/event.yaml` を置くと、説明文や開催時間帯
+(`play_hours`) を指定できる。時間帯外のランは ingest 時に除外される。
+全イベント共通のエラー除外パターンは `config/exclude_errors.yaml` に書く。
+詳細は [`docs/event-config.md`](docs/event-config.md) を参照。
 
 ## モノレポ構成
 
@@ -60,6 +65,7 @@ packages/
 | --- | --- |
 | `pnpm dev` | webapp を開発モードで起動 |
 | `pnpm ingest` | `data/` を走査して `public-data/` を生成 |
+| `pnpm fetch-localization` | Google Sheets からカード/UI の日本語名を取得 |
 | `pnpm test` | 全パッケージの Vitest を実行 |
 | `pnpm typecheck` | tsc --noEmit |
 | `pnpm lint` | Biome lint |
@@ -91,6 +97,7 @@ packages/
 - [`docs/design.md`](docs/design.md) — 全体設計
 - [`docs/tech-stack.md`](docs/tech-stack.md) — 技術スタック比較
 - [`docs/log-spec.md`](docs/log-spec.md) — ログフォーマット
-- [`docs/data-schema.md`](docs/data-schema.md) — Parquet 出力仕様
+- [`docs/data-schema.md`](docs/data-schema.md) — Parquet / manifest 出力仕様
 - [`docs/data-policy.md`](docs/data-policy.md) — 生ログ・生成物の取り扱い方針
-- [`docs/plan/`](docs/plan/) — フェーズ別実装計画
+- [`docs/event-config.md`](docs/event-config.md) — `meta.yaml` / `event.yaml` / `exclude_errors.yaml` の書式
+- [`docs/plan/`](docs/plan/) — フェーズ別実装計画 (実装履歴)
