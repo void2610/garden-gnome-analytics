@@ -55,8 +55,10 @@ export function DashboardPage() {
     queryFn: async () => {
       if (!manifest) return [];
       const where = buildWhereRuns(search);
+      // started_at は ISO Z 文字列 (UTC) で保存されているため、JST 表示には +9h する。
       const sql = `
-        SELECT EXTRACT(HOUR FROM started_at)::INTEGER AS hour, COUNT(*)::INTEGER AS plays
+        SELECT EXTRACT(HOUR FROM started_at + INTERVAL 9 HOUR)::INTEGER AS hour,
+               COUNT(*)::INTEGER AS plays
         FROM ${runsFrom(manifest.datasets)}
         ${where}
         GROUP BY 1 ORDER BY 1
@@ -72,7 +74,8 @@ export function DashboardPage() {
       if (!manifest) return [];
       const where = buildWhereRuns(search);
       const sql = `
-        SELECT date_trunc('day', started_at)::DATE AS day, COUNT(*)::INTEGER AS plays
+        SELECT date_trunc('day', started_at + INTERVAL 9 HOUR)::DATE AS day,
+               COUNT(*)::INTEGER AS plays
         FROM ${runsFrom(manifest.datasets)}
         ${where}
         GROUP BY 1 ORDER BY 1
@@ -114,7 +117,7 @@ export function DashboardPage() {
       </SimpleGrid>
 
       <Card withBorder padding="md">
-        <Title order={4}>時間帯別プレイ数</Title>
+        <Title order={4}>時間帯別プレイ数 (JST, 0〜23 時)</Title>
         <BarChart
           h={240}
           mt="md"
@@ -126,7 +129,7 @@ export function DashboardPage() {
       </Card>
 
       <Card withBorder padding="md">
-        <Title order={4}>日別プレイ数</Title>
+        <Title order={4}>日別プレイ数 (JST)</Title>
         <LineChart
           h={240}
           mt="md"
