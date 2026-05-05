@@ -10,7 +10,6 @@ interface EventGroup {
   eventName: string;
   eventDate?: string;
   venue?: string;
-  notes?: string;
   deviceCount: number;
   runCount: number;
   eventCount: number;
@@ -97,7 +96,6 @@ function groupByEvent(datasets: ManifestDataset[]): EventGroup[] {
         eventName: d.meta.event,
         eventDate: d.meta.event_date,
         venue: d.meta.venue,
-        notes: d.meta.notes,
         deviceCount: 1,
         runCount: d.runCount,
         eventCount: d.eventCount,

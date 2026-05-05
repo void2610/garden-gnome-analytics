@@ -25,8 +25,6 @@ export function EventDetailPage() {
       <Text c="dimmed">
         {[head.meta.event_date, head.meta.venue].filter(Boolean).join(' / ') || '-'}
       </Text>
-      {head.meta.notes && <Text size="sm">{head.meta.notes}</Text>}
-
       <SimpleGrid cols={{ base: 1, sm: 4 }} mt="md">
         <Card withBorder padding="md">
           <Text size="sm" c="dimmed">
@@ -88,6 +86,11 @@ export function EventDetailPage() {
               <Text size="sm" c="dimmed">
                 {d.meta.game_version ?? '-'}
               </Text>
+              {d.meta.notes && (
+                <Text size="xs" c="dimmed" mt={4}>
+                  {d.meta.notes}
+                </Text>
+              )}
               <Group mt="sm" gap="md">
                 <Stat label="ラン" value={d.runCount} />
                 <Stat label="イベント" value={d.eventCount} />
