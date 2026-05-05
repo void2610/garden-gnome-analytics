@@ -89,14 +89,7 @@ describe('SortableTable - 複数キーソート (Shift なし)', () => {
     await user.click(screen.getByText('value'));
 
     // name 昇順を第一キー、value 降順を第二キーとして並ぶ
-    expect(getCol(0)).toEqual([
-      'Apple',
-      'Apple',
-      'Apple',
-      'Banana',
-      'Banana',
-      'Cherry',
-    ]);
+    expect(getCol(0)).toEqual(['Apple', 'Apple', 'Apple', 'Banana', 'Banana', 'Cherry']);
     expect(getCol(1)).toEqual(['30', '15', '5', '50', '10', '20']);
   });
 
@@ -108,14 +101,7 @@ describe('SortableTable - 複数キーソート (Shift なし)', () => {
 
     // value をもう一度 → 昇順に反転、name は第一キーのまま
     await user.click(screen.getByText('value'));
-    expect(getCol(0)).toEqual([
-      'Apple',
-      'Apple',
-      'Apple',
-      'Banana',
-      'Banana',
-      'Cherry',
-    ]);
+    expect(getCol(0)).toEqual(['Apple', 'Apple', 'Apple', 'Banana', 'Banana', 'Cherry']);
     expect(getCol(1)).toEqual(['5', '15', '30', '10', '50', '20']);
   });
 
@@ -128,14 +114,7 @@ describe('SortableTable - 複数キーソート (Shift なし)', () => {
     await user.click(screen.getByText('value')); // value 解除
 
     // value のソートは外れ、name のみで安定
-    expect(getCol(0)).toEqual([
-      'Apple',
-      'Apple',
-      'Apple',
-      'Banana',
-      'Banana',
-      'Cherry',
-    ]);
+    expect(getCol(0)).toEqual(['Apple', 'Apple', 'Apple', 'Banana', 'Banana', 'Cherry']);
   });
 
   it('複数キーソート中も行数は不変', async () => {
@@ -158,14 +137,7 @@ describe('SortableTable - 複数キーソート (Shift なし)', () => {
     await user.click(resetBtn);
 
     // ソート状態がクリアされ、行は元の挿入順
-    expect(getCol(0)).toEqual([
-      'Apple',
-      'Banana',
-      'Cherry',
-      'Apple',
-      'Banana',
-      'Apple',
-    ]);
+    expect(getCol(0)).toEqual(['Apple', 'Banana', 'Cherry', 'Apple', 'Banana', 'Apple']);
   });
 
   it('ソート中はサマリ表示が出る', async () => {
@@ -193,14 +165,7 @@ describe('SortableTable - defaultSort', () => {
         />
       </MantineProvider>,
     );
-    expect(getCol(0)).toEqual([
-      'Apple',
-      'Apple',
-      'Apple',
-      'Banana',
-      'Banana',
-      'Cherry',
-    ]);
+    expect(getCol(0)).toEqual(['Apple', 'Apple', 'Apple', 'Banana', 'Banana', 'Cherry']);
     expect(getCol(1)).toEqual(['30', '15', '5', '50', '10', '20']);
   });
 });

@@ -31,9 +31,7 @@ describe('parseRunLogLine', () => {
   });
 
   it('未知イベントは unknown_event として返す', () => {
-    const r = parseRunLogLine(
-      '2026-05-03T11:24:04.727|TotallyUnknownEvent|foo=bar',
-    );
+    const r = parseRunLogLine('2026-05-03T11:24:04.727|TotallyUnknownEvent|foo=bar');
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error.kind).toBe('unknown_event');
   });

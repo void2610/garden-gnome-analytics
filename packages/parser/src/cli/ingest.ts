@@ -65,10 +65,7 @@ function printHelpAndExit(): never {
 
 // config/exclude_errors.yaml を読み込んで patterns 配列を返す。
 // ファイルが無ければ空配列を返す (除外なし)。
-async function loadExcludePatterns(
-  path: string,
-  log: pino.Logger,
-): Promise<string[]> {
+async function loadExcludePatterns(path: string, log: pino.Logger): Promise<string[]> {
   const abs = resolve(path);
   try {
     const text = await readFile(abs, 'utf8');

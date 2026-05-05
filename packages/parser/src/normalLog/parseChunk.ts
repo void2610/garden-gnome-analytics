@@ -1,8 +1,7 @@
 // 通常ログ (a) の text 全体を NormalLogEntry[] にする純関数
 import type { NormalLogEntry, NormalLogLevel } from '@gga/shared';
 
-const LINE_HEAD =
-  /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}\.\d{3}) \[([^\]]+)\]\s?(.*)$/;
+const LINE_HEAD = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}\.\d{3}) \[([^\]]+)\]\s?(.*)$/;
 
 const LEVELS: ReadonlyArray<NormalLogLevel> = [
   'Log',

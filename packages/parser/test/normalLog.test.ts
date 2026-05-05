@@ -9,9 +9,7 @@ const fixtureDir = join(here, 'fixtures');
 
 describe('parseNormalLogChunk', () => {
   it('1 行のログ entry をパースする', () => {
-    const entries = parseNormalLogChunk(
-      '2026-05-03 10:29:28.924 [LogManager] Initialized\n',
-    );
+    const entries = parseNormalLogChunk('2026-05-03 10:29:28.924 [LogManager] Initialized\n');
     expect(entries).toHaveLength(1);
     expect(entries[0]?.level).toBe('LogManager');
     expect(entries[0]?.message).toBe('Initialized');

@@ -16,10 +16,9 @@ describe('parseRunLogFile', () => {
 
   it('壊れた行はスキップしてエラーを通知する', async () => {
     const errors: string[] = [];
-    const events = await parseRunLogFileToArray(
-      join(fixtureDir, 'run-malformed.log'),
-      { onError: (e) => errors.push(e.kind) },
-    );
+    const events = await parseRunLogFileToArray(join(fixtureDir, 'run-malformed.log'), {
+      onError: (e) => errors.push(e.kind),
+    });
     // Session(Start/End) と TurnStart の 3 件は通る
     expect(events.length).toBe(3);
     expect(errors).toContain('tokenize');
@@ -27,9 +26,7 @@ describe('parseRunLogFile', () => {
   });
 
   it('リワード関連を含むランをパースできる', async () => {
-    const events = await parseRunLogFileToArray(
-      join(fixtureDir, 'run-with-rewards.log'),
-    );
+    const events = await parseRunLogFileToArray(join(fixtureDir, 'run-with-rewards.log'));
     const types = events.map((e) => e.body.event);
     expect(types).toContain('RewardSelected');
     expect(types).toContain('TreasureCollected');

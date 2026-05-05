@@ -1,11 +1,4 @@
-import {
-  ActionIcon,
-  AppShell,
-  Group,
-  NavLink,
-  Title,
-  useMantineColorScheme,
-} from '@mantine/core';
+import { ActionIcon, AppShell, Group, NavLink, Title, useMantineColorScheme } from '@mantine/core';
 import {
   IconMoonStars,
   IconSun,
@@ -45,11 +38,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
 
   return (
-    <AppShell
-      header={{ height: 56 }}
-      navbar={{ width: 220, breakpoint: 'sm' }}
-      padding="md"
-    >
+    <AppShell header={{ height: 56 }} navbar={{ width: 220, breakpoint: 'sm' }} padding="md">
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
           <Title order={4}>Garden Gnome Analytics</Title>
@@ -58,9 +47,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               variant="default"
               size="lg"
               aria-label="カラースキーム切替"
-              onClick={() =>
-                setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')
-              }
+              onClick={() => setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')}
             >
               {colorScheme === 'dark' ? <IconSun size={18} /> : <IconMoonStars size={18} />}
             </ActionIcon>
@@ -77,8 +64,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             leftSection={item.icon}
             active={
               item.href === '/'
-                ? location.pathname === '/' ||
-                  location.pathname === import.meta.env.BASE_URL
+                ? location.pathname === '/' || location.pathname === import.meta.env.BASE_URL
                 : location.pathname.includes(item.href)
             }
           />

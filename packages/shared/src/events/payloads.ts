@@ -19,10 +19,7 @@ const numFromString = z.preprocess((v) => {
 }, z.number());
 
 // 共通プレフィックスとして event 名を持つ
-function evt<TName extends string, TShape extends z.ZodRawShape>(
-  name: TName,
-  shape: TShape,
-) {
+function evt<TName extends string, TShape extends z.ZodRawShape>(name: TName, shape: TShape) {
   return z.object({ event: z.literal(name), ...shape });
 }
 

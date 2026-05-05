@@ -1,7 +1,5 @@
 // パース結果の Result 型と各種パースエラー
-export type Result<T, E = ParseError> =
-  | { ok: true; value: T }
-  | { ok: false; error: E };
+export type Result<T, E = ParseError> = { ok: true; value: T } | { ok: false; error: E };
 
 export type ParseErrorKind = 'tokenize' | 'schema' | 'unknown_event';
 

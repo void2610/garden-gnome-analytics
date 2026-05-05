@@ -40,10 +40,7 @@ describe('runIngest 統合テスト', () => {
     await mkdir(dsDir, { recursive: true });
     await writeFile(join(dsDir, 'meta.yaml'), META);
     await writeFile(join(dsDir, 'run_20260503_112337_468.log'), RUN_LOG);
-    await writeFile(
-      join(dsDir, 'the-garden-of-garden-gnome_20260503_112328.log'),
-      NORMAL_LOG,
-    );
+    await writeFile(join(dsDir, 'the-garden-of-garden-gnome_20260503_112328.log'), NORMAL_LOG);
   });
 
   afterAll(async () => {
@@ -62,9 +59,7 @@ describe('runIngest 統合テスト', () => {
     expect(result.errors).toBeGreaterThanOrEqual(1);
 
     // manifest.json
-    const manifest = JSON.parse(
-      await readFile(join(outDir, 'manifest.json'), 'utf8'),
-    );
+    const manifest = JSON.parse(await readFile(join(outDir, 'manifest.json'), 'utf8'));
     expect(manifest.datasets).toHaveLength(1);
 
     // events parquet ファイル列挙

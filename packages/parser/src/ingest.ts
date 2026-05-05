@@ -7,12 +7,7 @@ import { runIdFromPath } from './correlate';
 import { parseNormalLogFile } from './normalLog/parseFile';
 import { parseRunLogFileToArray } from './runLog/parseFile';
 import { scanDataDir } from './scan';
-import {
-  type ErrorRow,
-  type EventRow,
-  type RunRow,
-  writeParquetSet,
-} from './writer';
+import { type ErrorRow, type EventRow, type RunRow, writeParquetSet } from './writer';
 import { writeManifest, type ManifestDataset } from './manifest';
 
 export interface IngestOptions {
@@ -106,9 +101,7 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
       log.info(`  parsing run ${i + 1}/${ds.runLogPaths.length}: ${rp}`);
       const events = await parseRunLogFileToArray(rp, {
         onError: (e) => {
-          warnings.push(
-            `${rp}#${e.lineNumber} (${e.kind}): ${e.message.slice(0, 120)}`,
-          );
+          warnings.push(`${rp}#${e.lineNumber} (${e.kind}): ${e.message.slice(0, 120)}`);
         },
       });
       const runId = runIdFromPath(rp);
@@ -206,9 +199,7 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
     }
 
     if (dsExcludedCount > 0) {
-      log.info(
-        `  ${ds.eventSlug}/${ds.deviceSlug}: ${dsExcludedCount} ラン除外 (play_hours 外)`,
-      );
+      log.info(`  ${ds.eventSlug}/${ds.deviceSlug}: ${dsExcludedCount} ラン除外 (play_hours 外)`);
     }
 
     // run に紐付かない errors も収録（run 範囲外）
@@ -262,9 +253,7 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
   }
 
   if (excludePatterns.length > 0) {
-    log.info(
-      `除外パターン ${excludePatterns.length} 件で ${totalErrorExcluded} エラーを除外`,
-    );
+    log.info(`除外パターン ${excludePatterns.length} 件で ${totalErrorExcluded} エラーを除外`);
   }
   log.info(
     `writing parquet: events=${allEvents.length} runs=${allRuns.length} errors=${allErrors.length}`,

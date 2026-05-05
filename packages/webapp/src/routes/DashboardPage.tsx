@@ -1,12 +1,4 @@
-import {
-  Card,
-  Group,
-  Loader,
-  SimpleGrid,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Card, Group, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { BarChart, LineChart } from '@mantine/charts';
 import { useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
@@ -99,9 +91,7 @@ export function DashboardPage() {
 
   const winPct = kpi?.win_rate != null ? `${(kpi.win_rate * 100).toFixed(1)}%` : '-';
   const medianMin =
-    kpi?.median_duration_sec != null
-      ? (kpi.median_duration_sec / 60).toFixed(1)
-      : '-';
+    kpi?.median_duration_sec != null ? (kpi.median_duration_sec / 60).toFixed(1) : '-';
   const avgStage = kpi?.avg_stage != null ? kpi.avg_stage.toFixed(1) : '-';
 
   return (

@@ -11,18 +11,12 @@ export function extractRunLogPath(message: string): string | null {
   return m[1] ?? null;
 }
 
-export function correlate(
-  runs: RawRunFile[],
-  normals: NormalLogEntry[],
-): CorrelatedRun[] {
+export function correlate(runs: RawRunFile[], normals: NormalLogEntry[]): CorrelatedRun[] {
   // 各 run の時刻範囲を計算
   return runs.map((run) => {
-    const startedAt =
-      run.events.length > 0 ? (run.events[0]?.date ?? undefined) : undefined;
+    const startedAt = run.events.length > 0 ? (run.events[0]?.date ?? undefined) : undefined;
     const endedAt =
-      run.events.length > 0
-        ? (run.events[run.events.length - 1]?.date ?? undefined)
-        : undefined;
+      run.events.length > 0 ? (run.events[run.events.length - 1]?.date ?? undefined) : undefined;
 
     const relatedErrors = normals.filter((entry) => {
       if (entry.level !== 'Error' && entry.level !== 'Exception') return false;

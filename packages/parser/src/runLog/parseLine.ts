@@ -17,10 +17,7 @@ export function parseLocalIsoToDate(iso: string): Date {
   return new Date(iso);
 }
 
-export function parseRunLogLine(
-  line: string,
-  lineNumber = 0,
-): Result<RunEvent, ParseError> {
+export function parseRunLogLine(line: string, lineNumber = 0): Result<RunEvent, ParseError> {
   const tokens = tokenizeRunLogLine(line);
   if (!tokens) {
     return err({

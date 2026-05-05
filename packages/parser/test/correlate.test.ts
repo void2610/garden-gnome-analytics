@@ -17,9 +17,7 @@ describe('extractRunLogPath', () => {
 
 describe('runIdFromPath', () => {
   it('ファイル名から runId を作る', () => {
-    expect(runIdFromPath('/foo/bar/run_20260503_103049_645.log')).toBe(
-      'run_20260503_103049_645',
-    );
+    expect(runIdFromPath('/foo/bar/run_20260503_103049_645.log')).toBe('run_20260503_103049_645');
   });
 });
 

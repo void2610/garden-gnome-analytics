@@ -71,16 +71,12 @@ export function ComparePage() {
               <Stat label="ラン数" value={r.total_runs.toString()} />
               <Stat
                 label="勝率"
-                value={
-                  r.win_rate != null ? `${(r.win_rate * 100).toFixed(1)}%` : '-'
-                }
+                value={r.win_rate != null ? `${(r.win_rate * 100).toFixed(1)}%` : '-'}
               />
               <Stat
                 label="中央時間 (分)"
                 value={
-                  r.median_duration_sec != null
-                    ? (r.median_duration_sec / 60).toFixed(1)
-                    : '-'
+                  r.median_duration_sec != null ? (r.median_duration_sec / 60).toFixed(1) : '-'
                 }
               />
               <Stat
@@ -98,7 +94,9 @@ export function ComparePage() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <Stack gap={0}>
-      <Text size="xs" c="dimmed">{label}</Text>
+      <Text size="xs" c="dimmed">
+        {label}
+      </Text>
       <Text fw={600}>{value}</Text>
     </Stack>
   );

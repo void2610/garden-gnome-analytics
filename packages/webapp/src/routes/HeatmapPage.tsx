@@ -290,8 +290,8 @@ export function HeatmapPage() {
       <Stack>
         <Title order={2}>マップヒートマップ</Title>
         <Alert icon={<IconAlertCircle size={16} />} color="yellow" title="マップ情報がありません">
-          ヒートマップはバトルログの <code>mapName</code> 列を使ってマップ単位で集計します。
-          現在 manifest 上で <code>hasMapName: true</code> のデータセットがないため表示できません。
+          ヒートマップはバトルログの <code>mapName</code> 列を使ってマップ単位で集計します。 現在
+          manifest 上で <code>hasMapName: true</code> のデータセットがないため表示できません。
           ゲーム本体に mapName を記録するロギング (PR #192) が含まれた版でログを取り直してください。
         </Alert>
       </Stack>
@@ -353,8 +353,7 @@ export function HeatmapPage() {
           {minSec != null && maxSec != null && minSec < maxSec && (
             <div>
               <Text size="xs" c="dimmed" mb={4}>
-                時間帯フィルタ:{' '}
-                {new Date(sliderFrom * 1000).toLocaleString('ja-JP')} 〜{' '}
+                時間帯フィルタ: {new Date(sliderFrom * 1000).toLocaleString('ja-JP')} 〜{' '}
                 {new Date(sliderTo * 1000).toLocaleString('ja-JP')}
               </Text>
               <RangeSlider
@@ -400,13 +399,7 @@ interface HeatmapSvgProps {
   layers: LayerKey[];
 }
 
-function HeatmapSvg({
-  movesCells,
-  presenceCells,
-  plantsCells,
-  edges,
-  layers,
-}: HeatmapSvgProps) {
+function HeatmapSvg({ movesCells, presenceCells, plantsCells, edges, layers }: HeatmapSvgProps) {
   const allPoints: Array<{ x: number; y: number }> = [];
   for (const c of movesCells) allPoints.push({ x: c.x, y: c.y });
   for (const c of presenceCells) allPoints.push({ x: c.x, y: c.y });

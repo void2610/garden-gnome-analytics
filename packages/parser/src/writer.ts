@@ -101,9 +101,7 @@ async function copyNdjsonToParquet(args: {
       `INSERT INTO staging SELECT * FROM read_json('${escaped}', format='newline_delimited')`,
     );
     const outEscaped = args.outPath.replace(/'/g, "''");
-    await conn.run(
-      `COPY staging TO '${outEscaped}' (FORMAT PARQUET, COMPRESSION ZSTD)`,
-    );
+    await conn.run(`COPY staging TO '${outEscaped}' (FORMAT PARQUET, COMPRESSION ZSTD)`);
     await conn.run('DROP TABLE staging');
   } finally {
     conn.disconnectSync();

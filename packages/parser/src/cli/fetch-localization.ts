@@ -111,9 +111,7 @@ async function main() {
     cardNames,
     // 将来用: 全 key→ja のマップも置いておく
     all: Object.fromEntries(
-      Object.entries(allRows).flatMap(([, rows]) =>
-        rows.map((r) => [r.key, r.ja] as const),
-      ),
+      Object.entries(allRows).flatMap(([, rows]) => rows.map((r) => [r.key, r.ja] as const)),
     ),
   };
 
