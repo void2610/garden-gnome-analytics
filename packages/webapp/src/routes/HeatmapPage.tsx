@@ -231,18 +231,43 @@ export function HeatmapPage() {
     },
   });
 
-  // ステージ MultiSelect 用データ (種別ごとのグループ)
+  // ステージ MultiSelect 用データ
+  // stage_id 単独ではフィルタするが、同じ stage_id が複数の stage_type
+  // (例: Layer1_1 が Battle / Event 両方で出現) を持つことがあるので
+  // stage_id をキーに集約し、ラベルに種別の内訳を表示する
   const stageSelectData = useMemo(() => {
     if (!stageOptions) return [];
-    const grouped = new Map<string, { value: string; label: string }[]>();
+    const byId = new Map<string, { types: Map<string, number>; total: number }>();
     for (const o of stageOptions) {
+      const id = o.stage_id;
+      const entry = byId.get(id) ?? { types: new Map<string, number>(), total: 0 };
       const t = o.stage_type ?? 'Unknown';
-      const item = { value: o.stage_id, label: `${o.stage_id} (n=${o.c})` };
-      const arr = grouped.get(t);
-      if (arr) arr.push(item);
-      else grouped.set(t, [item]);
+      entry.types.set(t, (entry.types.get(t) ?? 0) + o.c);
+      entry.total += o.c;
+      byId.set(id, entry);
     }
-    return [...grouped.entries()].map(([type, items]) => ({ group: type, items }));
+    // 主要種別 (出現数最多) でグループ分け
+    const grouped = new Map<string, { value: string; label: string; total: number }[]>();
+    for (const [id, { types, total }] of byId) {
+      const breakdown = [...types.entries()].sort(([, a], [, b]) => b - a);
+      const primary = breakdown[0]?.[0] ?? 'Unknown';
+      const label =
+        breakdown.length === 1
+          ? `${id} (${primary} ${total})`
+          : `${id} (${breakdown.map(([t, c]) => `${t}:${c}`).join(' / ')})`;
+      const item = { value: id, label, total };
+      const arr = grouped.get(primary);
+      if (arr) arr.push(item);
+      else grouped.set(primary, [item]);
+    }
+    // 各グループ内は total 降順
+    for (const [, items] of grouped) {
+      items.sort((a, b) => b.total - a.total);
+    }
+    return [...grouped.entries()].map(([type, items]) => ({
+      group: type,
+      items: items.map(({ value, label }) => ({ value, label })),
+    }));
   }, [stageOptions]);
 
   return (
