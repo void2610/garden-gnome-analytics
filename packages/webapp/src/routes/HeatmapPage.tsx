@@ -11,7 +11,7 @@ import {
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { FilterBar } from '../components/FilterBar';
 import { QueryError } from '../components/QueryError';
 import { useManifest } from '../hooks/useManifest';
@@ -96,6 +96,16 @@ export function HeatmapPage() {
     },
   });
 
+  // 初期表示時に最も出現数の多いステージを自動選択
+  // (ステージ混合は意味がないため、URL に未指定なら強制的に 1 件入れる)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: stageIds.length は意図的
+  useEffect(() => {
+    if (stageIds.length > 0) return;
+    if (!stageOptions || stageOptions.length === 0) return;
+    const top = stageOptions[0];
+    if (top) update({ stageIds: [top.stage_id] });
+  }, [stageOptions]);
+
   // 時間スライダの取りうる範囲 (run.started_at の min/max)
   const { data: timeRange } = useQuery({
     queryKey: ['heatmap-time-range', filterKey, manifest?.generatedAt],
@@ -139,7 +149,8 @@ export function HeatmapPage() {
   // ヒートマップ用セル集計 (移動先/滞在頻度/配置)
   const { data: cellData, error: cellErr } = useQuery({
     queryKey: ['heatmap-cells', filterKey, layers.join(','), manifest?.generatedAt],
-    enabled: !!manifest && manifest.datasets.length > 0,
+    enabled:
+      !!manifest && manifest.datasets.length > 0 && stageIds.length > 0,
     queryFn: async () => {
       if (!manifest) return { moves: [], presence: [], plants: [] };
       const where = buildWhere(search);
@@ -207,7 +218,10 @@ export function HeatmapPage() {
   const { data: edges } = useQuery({
     queryKey: ['heatmap-paths', filterKey, layers.includes('paths'), manifest?.generatedAt],
     enabled:
-      !!manifest && manifest.datasets.length > 0 && layers.includes('paths'),
+      !!manifest &&
+      manifest.datasets.length > 0 &&
+      layers.includes('paths') &&
+      stageIds.length > 0,
     queryFn: async () => {
       if (!manifest) return [];
       const where = buildWhere(search);
@@ -274,7 +288,8 @@ export function HeatmapPage() {
     <Stack>
       <Title order={2}>マップヒートマップ</Title>
       <Text c="dimmed" size="sm">
-        ステージごとに移動 / 配置 / 経路をマップ上に集計。複数レイヤを重ね合わせ可能。
+        ステージごとに移動 / 配置 / 経路をマップ上に集計。各ステージはマップが
+        別なので、必ずステージを 1 つ以上選択してから表示する。
       </Text>
       <FilterBar filter={search} navigateTo={{ to: '/heatmap' }} />
       <QueryError error={cellErr} />
@@ -282,8 +297,9 @@ export function HeatmapPage() {
       <Card withBorder padding="sm">
         <Stack gap="xs">
           <MultiSelect
-            label="ステージ ID"
-            placeholder="未指定なら全ステージを混合表示"
+            label="ステージ ID (必須)"
+            placeholder="ステージを選択してください"
+            description="複数選択可。ただし各ステージはマップが異なるため、種類が違うステージを混ぜると重ね合わせの絵は意味を持ちません"
             data={stageSelectData}
             value={stageIds}
             onChange={(v) => update({ stageIds: v.length ? v : undefined })}
@@ -345,13 +361,17 @@ export function HeatmapPage() {
       </Card>
 
       <Card withBorder padding="md">
-        <HeatmapSvg
-          movesCells={cellData?.moves ?? []}
-          presenceCells={cellData?.presence ?? []}
-          plantsCells={cellData?.plants ?? []}
-          edges={edges ?? []}
-          layers={layers}
-        />
+        {stageIds.length === 0 ? (
+          <Text c="dimmed">ステージを選択してください</Text>
+        ) : (
+          <HeatmapSvg
+            movesCells={cellData?.moves ?? []}
+            presenceCells={cellData?.presence ?? []}
+            plantsCells={cellData?.plants ?? []}
+            edges={edges ?? []}
+            layers={layers}
+          />
+        )}
       </Card>
     </Stack>
   );
