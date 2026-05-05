@@ -20,6 +20,8 @@ export const ManifestDatasetSchema = z.object({
     from: z.string().nullable(),
     to: z.string().nullable(),
   }),
+  // BattleStart に mapName が記録されているか (古いログでは欠ける)
+  hasMapName: z.boolean().optional().default(false),
 });
 
 export const ManifestSchema = z.object({

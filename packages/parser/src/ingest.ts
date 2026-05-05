@@ -79,6 +79,8 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
     let dsErrorCount = 0;
     let periodFrom: Date | undefined;
     let periodTo: Date | undefined;
+    // BattleStart に mapName が含まれる行を 1 件でも観測したか
+    let hasMapName = false;
 
     for (let i = 0; i < ds.runLogPaths.length; i++) {
       const rp = ds.runLogPaths[i];
@@ -109,6 +111,15 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
           game_version: ds.meta.game_version ?? null,
         });
         dsEventCount += 1;
+
+        if (
+          !hasMapName &&
+          event === 'BattleStart' &&
+          typeof (payload as Record<string, unknown>).mapName === 'string' &&
+          (payload as Record<string, unknown>).mapName !== ''
+        ) {
+          hasMapName = true;
+        }
 
         if (!periodFrom || ev.date < periodFrom) periodFrom = ev.date;
         if (!periodTo || ev.date > periodTo) periodTo = ev.date;
@@ -196,6 +207,7 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
         from: periodFrom ? periodFrom.toISOString() : null,
         to: periodTo ? periodTo.toISOString() : null,
       },
+      hasMapName,
     });
   }
 

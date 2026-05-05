@@ -1,4 +1,5 @@
 import {
+  Alert,
   Card,
   Checkbox,
   Group,
@@ -8,6 +9,7 @@ import {
   Text,
   Title,
 } from '@mantine/core';
+import { IconAlertCircle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo } from 'react';
@@ -15,8 +17,8 @@ import { FilterBar } from '../components/FilterBar';
 import { QueryError } from '../components/QueryError';
 import { useManifest } from '../hooks/useManifest';
 import { query } from '../lib/duckdb/query';
-import { withStageFilledCte } from '../lib/duckdb/eventsWithStage';
 import { buildWhere, buildWhereRuns } from '../lib/filter';
+import type { ManifestDataset } from '../lib/manifest';
 import { eventsFrom, runsFrom } from '../queries/runsParquet';
 
 type LayerKey = 'moves' | 'presence' | 'plants' | 'paths';
@@ -44,15 +46,39 @@ interface EdgeRow {
   c: number;
 }
 
-interface StageOption {
-  stage_type: string;
-  stage_id: string;
+interface MapOption {
+  map_name: string;
   c: number;
 }
 
 interface RunTimeRange {
   min_ts: string | null;
   max_ts: string | null;
+}
+
+// 各 run 内で BattleStart.mapName を後続行に前方フィルし、PlayerMoved 等を
+// マップ単位で集計可能にする CTE。stage_type / stage_id は HeatmapPage では
+// 使わないため列に含めない。
+function withMapFilledCte(eventsFromExpr: string, where: string): string {
+  return `
+    WITH ev AS (
+      SELECT
+        event_slug, device_slug, run_id, seq, event_type, payload, timestamp,
+        CASE WHEN event_type = 'BattleStart'
+             THEN json_extract_string(payload, '$.mapName') END AS battle_map_name
+      FROM ${eventsFromExpr}
+      ${where}
+    ),
+    filled AS (
+      SELECT
+        *,
+        LAST_VALUE(battle_map_name IGNORE NULLS) OVER (
+          PARTITION BY event_slug, device_slug, run_id
+          ORDER BY seq ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS map_name
+      FROM ev
+    )
+  `;
 }
 
 export function HeatmapPage() {
@@ -62,7 +88,14 @@ export function HeatmapPage() {
   const filterKey = JSON.stringify(search);
 
   const layers = search.layers ?? LAYER_DEFAULT;
-  const stageId = search.stageId;
+  const mapName = search.mapName;
+
+  // hasMapName=true のデータセットのみがマップ単位の集計対象
+  const mapDatasets: ManifestDataset[] = useMemo(
+    () => manifest?.datasets.filter((d) => d.hasMapName) ?? [],
+    [manifest],
+  );
+  const hasAnyMapData = mapDatasets.length > 0;
 
   function update(patch: Partial<typeof search>) {
     navigate({
@@ -73,47 +106,45 @@ export function HeatmapPage() {
     });
   }
 
-  // 利用可能なステージ ID 一覧 (種別+ID)
-  const { data: stageOptions } = useQuery({
-    queryKey: ['heatmap-stages', filterKey, manifest?.generatedAt],
-    enabled: !!manifest && manifest.datasets.length > 0,
+  // 利用可能なマップ ID 一覧
+  const { data: mapOptions } = useQuery({
+    queryKey: ['heatmap-maps', filterKey, manifest?.generatedAt],
+    enabled: hasAnyMapData,
     queryFn: async () => {
-      if (!manifest) return [];
       const where = buildWhere(search);
       const sql = `
         SELECT
-          json_extract_string(payload, '$.stageType') AS stage_type,
-          json_extract_string(payload, '$.stageId') AS stage_id,
+          json_extract_string(payload, '$.mapName') AS map_name,
           COUNT(*)::INTEGER AS c
-        FROM ${eventsFrom(manifest.datasets)}
-        ${where}${where ? ' AND' : 'WHERE'} event_type = 'StageEnter'
-          AND json_extract_string(payload, '$.stageId') IS NOT NULL
-        GROUP BY 1, 2
+        FROM ${eventsFrom(mapDatasets)}
+        ${where}${where ? ' AND' : 'WHERE'} event_type = 'BattleStart'
+          AND json_extract_string(payload, '$.mapName') IS NOT NULL
+          AND json_extract_string(payload, '$.mapName') <> ''
+        GROUP BY 1
         ORDER BY c DESC
       `;
-      return await query<StageOption>(sql);
+      return await query<MapOption>(sql);
     },
   });
 
-  // 初期表示時に最も出現数の多いステージを自動選択
-  // biome-ignore lint/correctness/useExhaustiveDependencies: stageId は意図的に依存から除外
+  // 初期表示時に最も出現数の多いマップを自動選択
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mapName は意図的に依存から除外
   useEffect(() => {
-    if (stageId) return;
-    if (!stageOptions || stageOptions.length === 0) return;
-    const top = stageOptions[0];
-    if (top) update({ stageId: top.stage_id });
-  }, [stageOptions]);
+    if (mapName) return;
+    if (!mapOptions || mapOptions.length === 0) return;
+    const top = mapOptions[0];
+    if (top) update({ mapName: top.map_name });
+  }, [mapOptions]);
 
   // 時間スライダの取りうる範囲 (run.started_at の min/max)
   const { data: timeRange } = useQuery({
     queryKey: ['heatmap-time-range', filterKey, manifest?.generatedAt],
-    enabled: !!manifest && manifest.datasets.length > 0,
+    enabled: hasAnyMapData,
     queryFn: async () => {
-      if (!manifest) return null;
       const where = buildWhereRuns(search);
       const sql = `
         SELECT MIN(started_at)::VARCHAR AS min_ts, MAX(started_at)::VARCHAR AS max_ts
-        FROM ${runsFrom(manifest.datasets)}
+        FROM ${runsFrom(mapDatasets)}
         ${where}
       `;
       const [row] = await query<RunTimeRange>(sql);
@@ -126,11 +157,11 @@ export function HeatmapPage() {
   const sliderFrom = search.timeFrom ?? minSec ?? 0;
   const sliderTo = search.timeTo ?? maxSec ?? 0;
 
-  // 共通の WHERE 句生成: ステージ ID と時間スライダで絞る
+  // 共通の WHERE 句生成: マップ ID と時間スライダで絞る
   const whereFragments = useMemo(() => {
     const f: string[] = [];
-    if (stageId) {
-      f.push(`stage_id = '${stageId.replace(/'/g, "''")}'`);
+    if (mapName) {
+      f.push(`map_name = '${mapName.replace(/'/g, "''")}'`);
     }
     if (search.timeFrom != null) {
       const ts = new Date(search.timeFrom * 1000).toISOString();
@@ -141,17 +172,15 @@ export function HeatmapPage() {
       f.push(`timestamp <= TIMESTAMP '${ts}'`);
     }
     return f.length > 0 ? `AND ${f.join(' AND ')}` : '';
-  }, [stageId, search.timeFrom, search.timeTo]);
+  }, [mapName, search.timeFrom, search.timeTo]);
 
   // ヒートマップ用セル集計 (移動先/滞在頻度/配置)
   const { data: cellData, error: cellErr } = useQuery({
     queryKey: ['heatmap-cells', filterKey, layers.join(','), manifest?.generatedAt],
-    enabled:
-      !!manifest && manifest.datasets.length > 0 && !!stageId,
+    enabled: hasAnyMapData && !!mapName,
     queryFn: async () => {
-      if (!manifest) return { moves: [], presence: [], plants: [] };
       const where = buildWhere(search);
-      const cte = withStageFilledCte(eventsFrom(manifest.datasets), where);
+      const cte = withMapFilledCte(eventsFrom(mapDatasets), where);
 
       const movesSql = `
         ${cte}
@@ -214,15 +243,10 @@ export function HeatmapPage() {
   // 経路 (PlayerMoved.from → .to)
   const { data: edges } = useQuery({
     queryKey: ['heatmap-paths', filterKey, layers.includes('paths'), manifest?.generatedAt],
-    enabled:
-      !!manifest &&
-      manifest.datasets.length > 0 &&
-      layers.includes('paths') &&
-      !!stageId,
+    enabled: hasAnyMapData && !!mapName && layers.includes('paths'),
     queryFn: async () => {
-      if (!manifest) return [];
       const where = buildWhere(search);
-      const cte = withStageFilledCte(eventsFrom(manifest.datasets), where);
+      const cte = withMapFilledCte(eventsFrom(mapDatasets), where);
       const sql = `
         ${cte}
         SELECT
@@ -242,50 +266,45 @@ export function HeatmapPage() {
     },
   });
 
-  // ステージ MultiSelect 用データ
-  // stage_id 単独ではフィルタするが、同じ stage_id が複数の stage_type
-  // (例: Layer1_1 が Battle / Event 両方で出現) を持つことがあるので
-  // stage_id をキーに集約し、ラベルに種別の内訳を表示する
-  const stageSelectData = useMemo(() => {
-    if (!stageOptions) return [];
-    const byId = new Map<string, { types: Map<string, number>; total: number }>();
-    for (const o of stageOptions) {
-      const id = o.stage_id;
-      const entry = byId.get(id) ?? { types: new Map<string, number>(), total: 0 };
-      const t = o.stage_type ?? 'Unknown';
-      entry.types.set(t, (entry.types.get(t) ?? 0) + o.c);
-      entry.total += o.c;
-      byId.set(id, entry);
-    }
-    // 主要種別 (出現数最多) でグループ分け
-    const grouped = new Map<string, { value: string; label: string; total: number }[]>();
-    for (const [id, { types, total }] of byId) {
-      const breakdown = [...types.entries()].sort(([, a], [, b]) => b - a);
-      const primary = breakdown[0]?.[0] ?? 'Unknown';
-      const label =
-        breakdown.length === 1
-          ? `${id} (${primary} ${total})`
-          : `${id} (${breakdown.map(([t, c]) => `${t}:${c}`).join(' / ')})`;
-      const item = { value: id, label, total };
-      const arr = grouped.get(primary);
+  // マップ Select 用データ (Stage1 / Stage1-Common / ... のような prefix で
+  // ゆるくグループ化する)
+  const mapSelectData = useMemo(() => {
+    if (!mapOptions) return [];
+    const grouped = new Map<string, { value: string; label: string }[]>();
+    for (const o of mapOptions) {
+      const m = o.map_name.match(/^(.+?-[^-]+)/);
+      const groupKey = m?.[1] ?? 'Other';
+      const item = { value: o.map_name, label: `${o.map_name} (n=${o.c})` };
+      const arr = grouped.get(groupKey);
       if (arr) arr.push(item);
-      else grouped.set(primary, [item]);
+      else grouped.set(groupKey, [item]);
     }
-    // 各グループ内は total 降順
-    for (const [, items] of grouped) {
-      items.sort((a, b) => b.total - a.total);
-    }
-    return [...grouped.entries()].map(([type, items]) => ({
-      group: type,
-      items: items.map(({ value, label }) => ({ value, label })),
-    }));
-  }, [stageOptions]);
+    return [...grouped.entries()].map(([group, items]) => ({ group, items }));
+  }, [mapOptions]);
+
+  if (!manifest) return null;
+
+  // mapName を含むデータセットが 1 件もない場合は機能を停止
+  if (!hasAnyMapData) {
+    return (
+      <Stack>
+        <Title order={2}>マップヒートマップ</Title>
+        <Alert icon={<IconAlertCircle size={16} />} color="yellow" title="マップ情報がありません">
+          ヒートマップはバトルログの <code>mapName</code> 列を使ってマップ単位で集計します。
+          現在 manifest 上で <code>hasMapName: true</code> のデータセットがないため表示できません。
+          ゲーム本体に mapName を記録するロギング (PR #192) が含まれた版でログを取り直してください。
+        </Alert>
+      </Stack>
+    );
+  }
 
   return (
     <Stack>
       <Title order={2}>マップヒートマップ</Title>
       <Text c="dimmed" size="sm">
-        ステージ単位で移動 / 配置 / 経路をマップ上に集計。
+        マップ単位で移動 / 配置 / 経路を集計。
+        {manifest.datasets.length > mapDatasets.length &&
+          ` (mapName 未記録のデータセット ${manifest.datasets.length - mapDatasets.length} 件は除外)`}
       </Text>
       <FilterBar filter={search} navigateTo={{ to: '/heatmap' }} />
       <QueryError error={cellErr} />
@@ -293,12 +312,12 @@ export function HeatmapPage() {
       <Card withBorder padding="sm">
         <Stack gap="xs">
           <Select
-            label="ステージ ID"
-            placeholder="ステージを選択"
-            description="各ステージはマップが異なるため 1 つだけ選択する"
-            data={stageSelectData}
-            value={stageId ?? null}
-            onChange={(v) => update({ stageId: v ?? undefined })}
+            label="マップ ID"
+            placeholder="マップを選択"
+            description="BattleStart.mapName。マップごとにレイアウトが異なる"
+            data={mapSelectData}
+            value={mapName ?? null}
+            onChange={(v) => update({ mapName: v ?? undefined })}
             searchable
             allowDeselect={false}
           />
@@ -357,8 +376,8 @@ export function HeatmapPage() {
       </Card>
 
       <Card withBorder padding="md">
-        {!stageId ? (
-          <Text c="dimmed">ステージを選択してください</Text>
+        {!mapName ? (
+          <Text c="dimmed">マップを選択してください</Text>
         ) : (
           <HeatmapSvg
             movesCells={cellData?.moves ?? []}
@@ -388,7 +407,6 @@ function HeatmapSvg({
   edges,
   layers,
 }: HeatmapSvgProps) {
-  // 全ての座標 (セル + edge 両端) からマップ範囲を求める
   const allPoints: Array<{ x: number; y: number }> = [];
   for (const c of movesCells) allPoints.push({ x: c.x, y: c.y });
   for (const c of presenceCells) allPoints.push({ x: c.x, y: c.y });
@@ -442,8 +460,8 @@ function HeatmapSvg({
         style={{ background: 'rgba(255,255,255,0.02)' }}
         role="img"
         aria-label="プレイヤー移動・植物配置・経路を重ねたマップヒートマップ"
-      ><title>マップヒートマップ</title>
-        {/* グリッド枠線 */}
+      >
+        <title>マップヒートマップ</title>
         {Array.from({ length: width * height }).map((_, idx) => {
           const x = xMin + (idx % width);
           const y = yMin + Math.floor(idx / width);
@@ -460,7 +478,6 @@ function HeatmapSvg({
           );
         })}
 
-        {/* 移動先ヒート (緑) */}
         {layers.includes('moves') &&
           movesCells.map((c) => (
             <rect
@@ -476,7 +493,6 @@ function HeatmapSvg({
             </rect>
           ))}
 
-        {/* 滞在頻度ヒート (濃い緑) */}
         {layers.includes('presence') &&
           presenceCells.map((c) => (
             <rect
@@ -492,7 +508,6 @@ function HeatmapSvg({
             </rect>
           ))}
 
-        {/* 配置ヒート (オレンジ・半透明オーバーレイ) */}
         {layers.includes('plants') &&
           plantsCells.map((c) => (
             <circle
@@ -507,7 +522,6 @@ function HeatmapSvg({
             </circle>
           ))}
 
-        {/* 経路 (青の線、太さ = 通過回数) */}
         {layers.includes('paths') &&
           edges.map((e) => {
             const a = center(e.fx, e.fy);
@@ -530,7 +544,6 @@ function HeatmapSvg({
             );
           })}
 
-        {/* セル中の数値 (移動先のみ) */}
         {layers.includes('moves') &&
           movesCells.map((c) => (
             <text

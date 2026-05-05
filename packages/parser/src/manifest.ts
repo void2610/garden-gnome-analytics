@@ -11,6 +11,10 @@ export interface ManifestDataset {
   eventCount: number;
   errorCount: number;
   period: { from: string | null; to: string | null };
+  // BattleStart イベントに mapName フィールドが記録されているか。
+  // ゲーム側の logging 拡張 (void2610-org/the-garden-of-garden-gnome#192 以降) を
+  // 含むビルドのログのみ true。webapp はこのフラグでマップ単位の集計可否を判定する。
+  hasMapName: boolean;
 }
 
 export interface Manifest {
