@@ -1,22 +1,18 @@
-import {
-  createRootRoute,
-  createRoute,
-  createRouter,
-  Outlet,
-} from '@tanstack/react-router';
+import { Outlet, createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
 import { z } from 'zod';
 import { AppLayout } from './components/AppLayout';
-import { CardsPage } from './routes/CardsPage';
-import { DashboardPage } from './routes/DashboardPage';
-import { DatasetsPage } from './routes/DatasetsPage';
-import { DatasetDetailPage } from './routes/DatasetDetailPage';
-import { ErrorsPage } from './routes/ErrorsPage';
-import { HeatmapPage } from './routes/HeatmapPage';
-import { RunsListPage } from './routes/RunsListPage';
-import { RunDetailPage } from './routes/RunDetailPage';
-import { StagesPage } from './routes/StagesPage';
-import { ComparePage } from './routes/ComparePage';
 import { FilterSchema } from './lib/filter';
+import { CardsPage } from './routes/CardsPage';
+import { ComparePage } from './routes/ComparePage';
+import { DashboardPage } from './routes/DashboardPage';
+import { DatasetDetailPage } from './routes/DatasetDetailPage';
+import { DatasetsPage } from './routes/DatasetsPage';
+import { ErrorsPage } from './routes/ErrorsPage';
+import { EventDetailPage } from './routes/EventDetailPage';
+import { HeatmapPage } from './routes/HeatmapPage';
+import { RunDetailPage } from './routes/RunDetailPage';
+import { RunsListPage } from './routes/RunsListPage';
+import { StagesPage } from './routes/StagesPage';
 
 const filterSearchSchema = FilterSchema;
 
@@ -38,6 +34,12 @@ const datasetRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'datasets/$slug',
   component: DatasetDetailPage,
+});
+
+const eventDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'events/$eventSlug',
+  component: EventDetailPage,
 });
 
 const dashboardRoute = createRoute({
@@ -104,6 +106,7 @@ const compareRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   datasetRoute,
+  eventDetailRoute,
   dashboardRoute,
   runsRoute,
   runDetailRoute,
