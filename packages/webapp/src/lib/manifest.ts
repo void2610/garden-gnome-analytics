@@ -19,6 +19,12 @@ export const ManifestDatasetSchema = z.object({
       name: z.string().optional(),
       description: z.string().optional(),
       slug: z.string().optional(),
+      play_hours: z
+        .object({
+          start: z.string(),
+          end: z.string(),
+        })
+        .optional(),
     })
     .optional(),
   runCount: z.number(),

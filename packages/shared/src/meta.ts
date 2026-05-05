@@ -27,6 +27,15 @@ export const EventMetaSchema = z.object({
   description: z.string().optional(),
   // 任意で slug を上書き可能
   slug: z.string().optional(),
+  // イベントの開催時間帯 (JST, "HH:MM"-"HH:MM")。
+  // ingest 時に started_at が [start, end) の範囲外のランは除外される。
+  // 開発者によるテストプレイを分析対象から外すために使う。
+  play_hours: z
+    .object({
+      start: z.string().regex(/^\d{2}:\d{2}$/),
+      end: z.string().regex(/^\d{2}:\d{2}$/),
+    })
+    .optional(),
 });
 
 export type EventMeta = z.infer<typeof EventMetaSchema>;

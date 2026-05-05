@@ -25,6 +25,12 @@ export function EventDetailPage() {
       <Text c="dimmed">
         {[head.meta.event_date, head.meta.venue].filter(Boolean).join(' / ') || '-'}
       </Text>
+      {head.eventMeta?.play_hours && (
+        <Text size="sm" c="dimmed">
+          開催時間: {head.eventMeta.play_hours.start}–{head.eventMeta.play_hours.end} (JST,
+          範囲外のランは除外済み)
+        </Text>
+      )}
       {head.eventMeta?.description && (
         <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
           {head.eventMeta.description}

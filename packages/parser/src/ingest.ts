@@ -77,10 +77,20 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
     let dsEventCount = 0;
     let dsRunCount = 0;
     let dsErrorCount = 0;
+    let dsExcludedCount = 0;
     let periodFrom: Date | undefined;
     let periodTo: Date | undefined;
     // BattleStart に mapName が含まれる行を 1 件でも観測したか
     let hasMapName = false;
+
+    // event.yaml の play_hours (JST) を分単位の半開区間に展開しておく。
+    const playHours = ds.eventMeta?.play_hours;
+    const playHoursMin = playHours
+      ? {
+          start: hhmmToMin(playHours.start),
+          end: hhmmToMin(playHours.end),
+        }
+      : null;
 
     for (let i = 0; i < ds.runLogPaths.length; i++) {
       const rp = ds.runLogPaths[i];
@@ -94,6 +104,26 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
         },
       });
       const runId = runIdFromPath(rp);
+
+      // run summary を先に計算し、play_hours 外なら出力をスキップする。
+      const summary = aggregateRun({
+        runId,
+        eventSlug: ds.eventSlug,
+        deviceSlug: ds.deviceSlug,
+        events,
+        gameVersion: ds.meta.game_version,
+      });
+
+      if (playHoursMin && summary.startedAt) {
+        const jstMin = jstMinutesOfDay(summary.startedAt);
+        if (jstMin < playHoursMin.start || jstMin >= playHoursMin.end) {
+          dsExcludedCount += 1;
+          log.info(
+            `  excluded (outside play_hours ${playHours?.start}-${playHours?.end} JST): ${rp}`,
+          );
+          continue;
+        }
+      }
 
       // events 行を生成
       for (let seq = 0; seq < events.length; seq++) {
@@ -125,14 +155,6 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
         if (!periodTo || ev.date > periodTo) periodTo = ev.date;
       }
 
-      // run summary
-      const summary = aggregateRun({
-        runId,
-        eventSlug: ds.eventSlug,
-        deviceSlug: ds.deviceSlug,
-        events,
-        gameVersion: ds.meta.game_version,
-      });
       allRuns.push({
         run_id: summary.runId,
         event_slug: summary.eventSlug,
@@ -171,9 +193,20 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
       }
     }
 
+    if (dsExcludedCount > 0) {
+      log.info(
+        `  ${ds.eventSlug}/${ds.deviceSlug}: ${dsExcludedCount} ラン除外 (play_hours 外)`,
+      );
+    }
+
     // run に紐付かない errors も収録（run 範囲外）
     for (const e of normals) {
       if (e.level !== 'Error' && e.level !== 'Exception') continue;
+      // play_hours 外のエラーログも除外する。
+      if (playHoursMin) {
+        const min = jstMinutesOfDay(e.date);
+        if (min < playHoursMin.start || min >= playHoursMin.end) continue;
+      }
       // すでに run に紐付いた entry は重複しないように timestamp/level/message でユニーク扱い
       const dup = allErrors.find(
         (a) =>
@@ -237,4 +270,17 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
     errors: allErrors.length,
     warnings,
   };
+}
+
+// "HH:MM" を 0 時起点の分数に変換する。
+function hhmmToMin(hhmm: string): number {
+  const [h, m] = hhmm.split(':').map(Number);
+  return (h ?? 0) * 60 + (m ?? 0);
+}
+
+// UTC の Date を JST の 0 時起点分数 (0..1440) に変換する。
+function jstMinutesOfDay(d: Date): number {
+  const jstMs = d.getTime() + 9 * 3600 * 1000;
+  const total = Math.floor(jstMs / 60000);
+  return ((total % 1440) + 1440) % 1440;
 }
