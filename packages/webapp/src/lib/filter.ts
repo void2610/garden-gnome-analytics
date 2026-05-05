@@ -1,6 +1,7 @@
 // 共通フィルタの Zod スキーマ
 // URL search params で型安全に扱うため string 配列の最小スキーマ
 import { z } from 'zod';
+import { TableFilterSchema, TableSortSchema } from './tableQuery';
 
 export const FilterSchema = z.object({
   events: z.array(z.string()).optional(),
@@ -8,6 +9,10 @@ export const FilterSchema = z.object({
   // YYYY-MM-DD
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
+  // テーブル単位のフィルタ / ソート (列に対する自由フィルタ + 複数キーソート)
+  // 詳細は lib/tableQuery.ts
+  tf: z.array(TableFilterSchema).optional(),
+  ts: z.array(TableSortSchema).optional(),
 });
 
 export type Filter = z.infer<typeof FilterSchema>;

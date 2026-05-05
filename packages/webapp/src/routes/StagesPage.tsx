@@ -1,12 +1,16 @@
 import { Loader, Stack, Text, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import { FilterBar } from '../components/FilterBar';
+import { QueryBar } from '../components/QueryBar';
 import { QueryError } from '../components/QueryError';
-import { SortableTable, type SortableColumn } from '../components/SortableTable';
+import { SortableTable, type SortableColumn, type SortKey } from '../components/SortableTable';
 import { useManifest } from '../hooks/useManifest';
+import { useUrlTableQuery } from '../hooks/useTableQuery';
 import { query } from '../lib/duckdb/query';
 import { buildWhere } from '../lib/filter';
+import { applyTableQuery } from '../lib/tableQuery';
 import { eventsFrom } from '../queries/runsParquet';
 
 interface StageStat {
@@ -33,12 +37,18 @@ const STAGE_TYPE_JA: Record<string, string> = {
   Treasure: '宝箱',
 };
 
+const STAGE_TYPE_OPTIONS = Object.entries(STAGE_TYPE_JA).map(([value, ja]) => ({
+  value,
+  label: `${ja} (${value})`,
+}));
+
 const COLUMNS: SortableColumn<StageStat>[] = [
   {
     key: 'stage_type',
     label: 'ステージ種別',
     accessor: (r) => r.stage_type,
     render: (r) => `${STAGE_TYPE_JA[r.stage_type] ?? r.stage_type} (${r.stage_type})`,
+    filter: { kind: 'enum', enumOptions: STAGE_TYPE_OPTIONS },
   },
   {
     key: 'reach_count',
@@ -46,6 +56,7 @@ const COLUMNS: SortableColumn<StageStat>[] = [
     accessor: (r) => r.reach_count,
     numeric: true,
     align: 'right',
+    filter: { kind: 'number' },
   },
   {
     key: 'win_count',
@@ -54,6 +65,7 @@ const COLUMNS: SortableColumn<StageStat>[] = [
     render: (r) => (COMBAT_STAGE_TYPES.has(r.stage_type) ? r.win_count : '-'),
     numeric: true,
     align: 'right',
+    filter: { kind: 'number' },
   },
   {
     key: 'loss_count',
@@ -62,15 +74,16 @@ const COLUMNS: SortableColumn<StageStat>[] = [
     render: (r) => (COMBAT_STAGE_TYPES.has(r.stage_type) ? r.loss_count : '-'),
     numeric: true,
     align: 'right',
+    filter: { kind: 'number' },
   },
   {
     key: 'unresolved_count',
     label: '未決着',
     accessor: (r) => r.unresolved_count,
-    render: (r) =>
-      COMBAT_STAGE_TYPES.has(r.stage_type) ? r.unresolved_count : '-',
+    render: (r) => (COMBAT_STAGE_TYPES.has(r.stage_type) ? r.unresolved_count : '-'),
     numeric: true,
     align: 'right',
+    filter: { kind: 'number' },
   },
   {
     key: 'win_rate',
@@ -88,6 +101,7 @@ const COLUMNS: SortableColumn<StageStat>[] = [
     },
     numeric: true,
     align: 'right',
+    filter: { kind: 'number' },
   },
   {
     key: 'avg_turns',
@@ -96,6 +110,7 @@ const COLUMNS: SortableColumn<StageStat>[] = [
     render: (r) => (r.avg_turns != null ? r.avg_turns.toFixed(1) : '-'),
     numeric: true,
     align: 'right',
+    filter: { kind: 'number' },
   },
   {
     key: 'avg_remain_hp',
@@ -104,6 +119,7 @@ const COLUMNS: SortableColumn<StageStat>[] = [
     render: (r) => (r.avg_remain_hp != null ? r.avg_remain_hp.toFixed(1) : '-'),
     numeric: true,
     align: 'right',
+    filter: { kind: 'number' },
   },
   {
     key: 'avg_damage',
@@ -112,6 +128,7 @@ const COLUMNS: SortableColumn<StageStat>[] = [
     render: (r) => (r.avg_damage != null ? r.avg_damage.toFixed(1) : '-'),
     numeric: true,
     align: 'right',
+    filter: { kind: 'number' },
   },
   {
     key: 'avg_elapsed_sec',
@@ -120,20 +137,41 @@ const COLUMNS: SortableColumn<StageStat>[] = [
     render: (r) => (r.avg_elapsed_sec != null ? r.avg_elapsed_sec.toFixed(1) : '-'),
     numeric: true,
     align: 'right',
+    filter: { kind: 'number' },
   },
 ];
+
+const DEFAULT_SORT: SortKey[] = [{ key: 'reach_count', direction: 'desc' }];
 
 export function StagesPage() {
   const search = useSearch({ from: '/stages' });
   const { data: manifest } = useManifest();
-  const filterKey = JSON.stringify(search);
+  const { query: tableQuery, setQuery: setTableQuery } = useUrlTableQuery({
+    to: '/stages',
+    search,
+  });
+  const filterKey = JSON.stringify({
+    events: search.events,
+    devices: search.devices,
+    dateFrom: search.dateFrom,
+    dateTo: search.dateTo,
+  });
 
-  const { data: rows, isLoading, error } = useQuery({
+  const {
+    data: rows,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['stages-stats-by-type', filterKey, manifest?.generatedAt],
     enabled: !!manifest && manifest.datasets.length > 0,
     queryFn: async () => {
       if (!manifest) return [];
-      const where = buildWhere(search);
+      const where = buildWhere({
+        events: search.events,
+        devices: search.devices,
+        dateFrom: search.dateFrom,
+        dateTo: search.dateTo,
+      });
       // BattleWin/Lose の payload には stageId/stageType が入っていないので、
       // 各 run 内で StageEnter の stageType を window 関数で後続行に前方フィルする
       // elapsedTime は "62.3s" 形式の文字列なので末尾 's' を取って数値化
@@ -191,25 +229,33 @@ export function StagesPage() {
     },
   });
 
+  const visibleRows = useMemo(
+    () => applyTableQuery(rows ?? [], COLUMNS, { tf: tableQuery.tf }),
+    [rows, tableQuery.tf],
+  );
+  const sort = tableQuery.ts ?? DEFAULT_SORT;
+
   return (
     <Stack>
       <Title order={2}>ステージ分析</Title>
       <Text c="dimmed" size="sm">
-        ステージ種別ごとの到達回数。戦闘ステージは勝敗・ターン・HP・所要時間も集計。
-        「未決着」= 戦闘途中で run のログが途切れたケース (アプリ強制終了 /
-        次の客のためのリセット等)。HP=0 まで普通にプレイした場合は敗北として記録される。
+        ステージ種別ごとの到達回数。戦闘ステージは勝敗・ターン・HP・所要時間も集計。 「未決着」=
+        戦闘途中で run のログが途切れたケース (アプリ強制終了 / 次の客のためのリセット等)。HP=0
+        まで普通にプレイした場合は敗北として記録される。
         勝率と各平均値は未決着を除外した「決着が付いた戦闘のみ」で集計。
       </Text>
       <FilterBar filter={search} navigateTo={{ to: '/stages' }} />
+      <QueryBar columns={COLUMNS} query={tableQuery} onChange={setTableQuery} />
       <QueryError error={error} />
       {isLoading ? (
         <Loader />
       ) : (
         <SortableTable
           columns={COLUMNS}
-          rows={rows ?? []}
+          rows={visibleRows}
           rowKey={(r) => r.stage_type}
-          defaultSort={{ key: 'reach_count', direction: 'desc' }}
+          sort={sort}
+          onSortChange={(s) => setTableQuery({ ...tableQuery, ts: s })}
         />
       )}
       {rows && rows.length === 0 && <Text c="dimmed">該当するステージなし</Text>}

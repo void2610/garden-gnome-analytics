@@ -1,20 +1,14 @@
-import {
-  Badge,
-  Card,
-  Group,
-  Loader,
-  ScrollArea,
-  Stack,
-  Table,
-  Tabs,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Badge, Card, Group, Loader, ScrollArea, Stack, Tabs, Text, Title } from '@mantine/core';
 import { LineChart } from '@mantine/charts';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
+import { useMemo } from 'react';
+import { QueryBar } from '../components/QueryBar';
+import { type SortableColumn, type SortKey, SortableTable } from '../components/SortableTable';
 import { useManifest } from '../hooks/useManifest';
+import { useLocalTableQuery } from '../hooks/useTableQuery';
 import { query } from '../lib/duckdb/query';
+import { applyTableQuery } from '../lib/tableQuery';
 import { errorsFrom, eventsFrom, runsFrom } from '../queries/runsParquet';
 
 interface RunSummary {
@@ -62,10 +56,13 @@ function escapeSql(s: string): string {
   return s.replace(/'/g, "''");
 }
 
+const TIMELINE_DEFAULT_SORT: SortKey[] = [{ key: 'seq', direction: 'asc' }];
+
 export function RunDetailPage() {
   const { slug } = useParams({ from: '/runs/$slug' });
   const parsed = parseSlug(slug);
   const { data: manifest } = useManifest();
+  const timelineTQ = useLocalTableQuery();
 
   const whereCommon = parsed
     ? `WHERE event_slug = '${escapeSql(parsed.eventSlug)}'
@@ -118,6 +115,71 @@ export function RunDetailPage() {
     },
   });
 
+  // event_type の選択肢は実データから動的に作る
+  const eventTypeOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of events ?? []) {
+      if (e.event_type) set.add(e.event_type);
+    }
+    return [...set].sort().map((v) => ({ value: v, label: v }));
+  }, [events]);
+
+  const timelineColumns: SortableColumn<EventRow>[] = useMemo(
+    () => [
+      {
+        key: 'seq',
+        label: 'seq',
+        accessor: (r) => r.seq,
+        numeric: true,
+        align: 'right',
+        filter: { kind: 'number' },
+      },
+      {
+        key: 'timestamp',
+        label: '時刻',
+        accessor: (r) => r.timestamp,
+        filter: { kind: 'date' },
+        render: (r) => new Date(r.timestamp).toLocaleTimeString('ja-JP', { hour12: false }),
+      },
+      {
+        key: 'event_type',
+        label: 'event',
+        accessor: (r) => r.event_type,
+        filter: { kind: 'enum', enumOptions: eventTypeOptions },
+        render: (r) => <Badge variant="light">{r.event_type}</Badge>,
+      },
+      {
+        key: 'payload',
+        label: 'payload',
+        accessor: (r) => r.payload,
+        filter: { kind: 'text' },
+        render: (r) => (
+          <span
+            style={{
+              fontFamily: 'monospace',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all',
+              fontSize: 12,
+            }}
+          >
+            {r.payload}
+          </span>
+        ),
+      },
+    ],
+    [eventTypeOptions],
+  );
+
+  const visibleEvents = useMemo(() => {
+    const filtered = applyTableQuery(events ?? [], timelineColumns, { tf: timelineTQ.query.tf });
+    // 描画コスト対策: フィルタ後でも先頭 1000 件に制限
+    return filtered.slice(0, 1000);
+  }, [events, timelineColumns, timelineTQ.query.tf]);
+
+  const totalFiltered = useMemo(() => {
+    return applyTableQuery(events ?? [], timelineColumns, { tf: timelineTQ.query.tf }).length;
+  }, [events, timelineColumns, timelineTQ.query.tf]);
+
   const hpSeries = (events ?? [])
     .map((e) => {
       try {
@@ -137,16 +199,28 @@ export function RunDetailPage() {
     <Stack>
       <Group justify="space-between">
         <Title order={2}>ラン詳細: {summary.run_id}</Title>
-        <Badge color={summary.outcome === 'win' ? 'green' : summary.outcome === 'loss' ? 'red' : 'gray'} size="lg">
+        <Badge
+          color={summary.outcome === 'win' ? 'green' : summary.outcome === 'loss' ? 'red' : 'gray'}
+          size="lg"
+        >
           {summary.outcome}
         </Badge>
       </Group>
 
       <Card withBorder padding="md">
         <Group gap="xl">
-          <Info label="開始" value={summary.started_at ? new Date(summary.started_at).toLocaleString('ja-JP') : '-'} />
-          <Info label="終了" value={summary.ended_at ? new Date(summary.ended_at).toLocaleString('ja-JP') : '-'} />
-          <Info label="長さ (秒)" value={summary.duration_sec != null ? Math.round(summary.duration_sec).toString() : '-'} />
+          <Info
+            label="開始"
+            value={summary.started_at ? new Date(summary.started_at).toLocaleString('ja-JP') : '-'}
+          />
+          <Info
+            label="終了"
+            value={summary.ended_at ? new Date(summary.ended_at).toLocaleString('ja-JP') : '-'}
+          />
+          <Info
+            label="長さ (秒)"
+            value={summary.duration_sec != null ? Math.round(summary.duration_sec).toString() : '-'}
+          />
           <Info label="ステージ数" value={String(summary.stage_count)} />
           <Info label="最終 HP" value={`${summary.final_hp ?? '-'} / ${summary.max_hp ?? '-'}`} />
           <Info label="デッキサイズ" value={String(summary.final_deck_size ?? '-')} />
@@ -162,45 +236,26 @@ export function RunDetailPage() {
         </Tabs.List>
 
         <Tabs.Panel value="timeline" pt="sm">
-          <ScrollArea h={500}>
-            <Table withRowBorders={false} striped fz="xs" style={{ tableLayout: 'fixed' }}>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th style={{ width: 60 }}>seq</Table.Th>
-                  <Table.Th style={{ width: 100 }}>時刻</Table.Th>
-                  <Table.Th style={{ width: 180 }}>event</Table.Th>
-                  <Table.Th>payload</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {(events ?? []).slice(0, 1000).map((e) => (
-                  <Table.Tr key={e.seq}>
-                    <Table.Td>{e.seq}</Table.Td>
-                    <Table.Td style={{ whiteSpace: 'nowrap' }}>
-                      {new Date(e.timestamp).toLocaleTimeString('ja-JP', { hour12: false })}
-                    </Table.Td>
-                    <Table.Td style={{ whiteSpace: 'nowrap' }}>
-                      <Badge variant="light">{e.event_type}</Badge>
-                    </Table.Td>
-                    <Table.Td
-                      style={{
-                        fontFamily: 'monospace',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-all',
-                      }}
-                    >
-                      {e.payload}
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </ScrollArea>
-          {(events ?? []).length > 1000 && (
-            <Text size="xs" c="dimmed" mt="xs">
-              先頭 1000 件のみ表示 (全 {(events ?? []).length} 件)
+          <Stack gap="xs">
+            <QueryBar
+              columns={timelineColumns}
+              query={timelineTQ.query}
+              onChange={timelineTQ.setQuery}
+            />
+            <Text size="xs" c="dimmed">
+              {visibleEvents.length} / {totalFiltered} 件表示
+              {totalFiltered > 1000 && ' (先頭 1000 件のみ)'}
             </Text>
-          )}
+            <ScrollArea h={500}>
+              <SortableTable
+                columns={timelineColumns}
+                rows={visibleEvents}
+                rowKey={(r) => String(r.seq)}
+                sort={timelineTQ.query.ts ?? TIMELINE_DEFAULT_SORT}
+                onSortChange={(s) => timelineTQ.setQuery({ ...timelineTQ.query, ts: s })}
+              />
+            </ScrollArea>
+          </Stack>
         </Tabs.Panel>
 
         <Tabs.Panel value="hp" pt="sm">
@@ -225,16 +280,20 @@ export function RunDetailPage() {
               {(errors ?? []).map((e) => (
                 <Card key={`${e.timestamp}-${e.level}`} withBorder padding="sm">
                   <Group>
-                    <Badge color={e.level === 'Exception' ? 'red' : 'orange'}>
-                      {e.level}
-                    </Badge>
+                    <Badge color={e.level === 'Exception' ? 'red' : 'orange'}>{e.level}</Badge>
                     <Text size="sm" c="dimmed">
                       {new Date(e.timestamp).toLocaleString('ja-JP')}
                     </Text>
                   </Group>
                   <Text mt="xs">{e.message}</Text>
                   {e.stack_trace && (
-                    <Text component="pre" mt="xs" size="xs" c="dimmed" style={{ whiteSpace: 'pre-wrap' }}>
+                    <Text
+                      component="pre"
+                      mt="xs"
+                      size="xs"
+                      c="dimmed"
+                      style={{ whiteSpace: 'pre-wrap' }}
+                    >
                       {e.stack_trace}
                     </Text>
                   )}
@@ -251,7 +310,9 @@ export function RunDetailPage() {
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <Stack gap={0}>
-      <Text size="xs" c="dimmed">{label}</Text>
+      <Text size="xs" c="dimmed">
+        {label}
+      </Text>
       <Text fw={600}>{value}</Text>
     </Stack>
   );

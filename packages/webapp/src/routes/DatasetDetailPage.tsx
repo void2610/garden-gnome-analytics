@@ -3,10 +3,14 @@
 import { Badge, Card, Group, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from '@tanstack/react-router';
-import { type SortableColumn, SortableTable } from '../components/SortableTable';
+import { useMemo } from 'react';
+import { QueryBar } from '../components/QueryBar';
+import { type SortableColumn, type SortKey, SortableTable } from '../components/SortableTable';
 import { useManifest } from '../hooks/useManifest';
+import { useLocalTableQuery } from '../hooks/useTableQuery';
 import { eventsParquetUrl, runsParquetUrl } from '../lib/duckdb/paths';
 import { query } from '../lib/duckdb/query';
+import { applyTableQuery } from '../lib/tableQuery';
 
 interface RunRow {
   run_id: string;
@@ -21,11 +25,18 @@ interface RunRow {
   final_deck_size: number | null;
 }
 
+const OUTCOME_OPTIONS = [
+  { value: 'win', label: 'win' },
+  { value: 'loss', label: 'loss' },
+  { value: 'abandoned', label: 'abandoned' },
+];
+
 const RUN_COLUMNS: SortableColumn<RunRow>[] = [
   {
     key: 'started_at',
     label: '開始時刻',
     accessor: (r) => r.started_at,
+    filter: { kind: 'date' },
     render: (r) => {
       const slug = `${r.event_slug}__${r.device_slug}__${r.run_id}`;
       return (
@@ -47,6 +58,7 @@ const RUN_COLUMNS: SortableColumn<RunRow>[] = [
       r.duration_sec != null ? Math.round(r.duration_sec).toLocaleString('ja-JP') : '-',
     numeric: true,
     align: 'right',
+    filter: { kind: 'number' },
   },
   {
     key: 'stage_count',
@@ -54,6 +66,7 @@ const RUN_COLUMNS: SortableColumn<RunRow>[] = [
     accessor: (r) => r.stage_count,
     numeric: true,
     align: 'right',
+    filter: { kind: 'number' },
   },
   {
     key: 'outcome',
@@ -64,6 +77,7 @@ const RUN_COLUMNS: SortableColumn<RunRow>[] = [
         {r.outcome}
       </Badge>
     ),
+    filter: { kind: 'enum', enumOptions: OUTCOME_OPTIONS },
   },
   {
     key: 'final_hp',
@@ -72,6 +86,7 @@ const RUN_COLUMNS: SortableColumn<RunRow>[] = [
     render: (r) => `${r.final_hp ?? '-'} / ${r.max_hp ?? '-'}`,
     numeric: true,
     align: 'right',
+    filter: { kind: 'number' },
   },
   {
     key: 'final_deck_size',
@@ -79,14 +94,18 @@ const RUN_COLUMNS: SortableColumn<RunRow>[] = [
     accessor: (r) => r.final_deck_size,
     numeric: true,
     align: 'right',
+    filter: { kind: 'number' },
   },
 ];
+
+const DEFAULT_SORT: SortKey[] = [{ key: 'started_at', direction: 'desc' }];
 
 export function DatasetDetailPage() {
   const params = useParams({ from: '/datasets/$slug' });
   const slug = params.slug;
   const { data: manifest } = useManifest();
   const dataset = manifest?.datasets.find((d) => `${d.eventSlug}__${d.deviceSlug}` === slug);
+  const { query: tableQuery, setQuery: setTableQuery } = useLocalTableQuery();
 
   const { data: counts, isLoading: countsLoading } = useQuery({
     queryKey: ['dataset-count', slug],
@@ -120,6 +139,11 @@ export function DatasetDetailPage() {
       `);
     },
   });
+
+  const visibleRuns = useMemo(
+    () => applyTableQuery(runs ?? [], RUN_COLUMNS, { tf: tableQuery.tf }),
+    [runs, tableQuery.tf],
+  );
 
   if (!dataset) return <Text>データセット {slug} は manifest に存在しません</Text>;
 
@@ -177,16 +201,18 @@ export function DatasetDetailPage() {
       </Card>
 
       <Title order={3} mt="md">
-        ラン一覧 ({runs?.length ?? 0} 件)
+        ラン一覧 ({visibleRuns.length} / {runs?.length ?? 0} 件)
       </Title>
+      <QueryBar columns={RUN_COLUMNS} query={tableQuery} onChange={setTableQuery} />
       {runsLoading ? (
         <Loader />
       ) : (
         <SortableTable
           columns={RUN_COLUMNS}
-          rows={runs ?? []}
+          rows={visibleRuns}
           rowKey={(r) => `${r.event_slug}__${r.device_slug}__${r.run_id}`}
-          defaultSort={{ key: 'started_at', direction: 'desc' }}
+          sort={tableQuery.ts ?? DEFAULT_SORT}
+          onSortChange={(s) => setTableQuery({ ...tableQuery, ts: s })}
         />
       )}
     </Stack>

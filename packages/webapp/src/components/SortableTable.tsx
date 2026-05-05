@@ -1,15 +1,15 @@
 // 汎用のソート可能テーブル
 // 列ヘッダをクリックすると「未指定 → デフォルト方向 → 反対方向 → 削除」の 3 段階で
 // ソートキーを切り替える。複数キーは「クリックした順」で優先度が積み上がる。
-// 単一キーに戻したいときは見出しの「ソートをリセット」ボタンで全クリア。
+//
+// 使い方は 2 系統:
+//  1) 非制御モード (defaultSort 渡し): 内部 state でソートを保持。テスト互換のため維持。
+//  2) 制御モード (sort + onSortChange): 親 (URL search 等) からソート状態を渡す。
+//     QueryBar と組み合わせる場合はこちら。
 import { ActionIcon, Card, Group, Table, Text, UnstyledButton } from '@mantine/core';
-import {
-  IconArrowsSort,
-  IconSortAscending,
-  IconSortDescending,
-  IconX,
-} from '@tabler/icons-react';
-import { useMemo, useState, type ReactNode } from 'react';
+import { IconArrowsSort, IconSortAscending, IconSortDescending, IconX } from '@tabler/icons-react';
+import { type ReactNode, useMemo, useState } from 'react';
+import type { ColumnFilterSpec } from '../lib/tableQuery';
 
 export interface SortableColumn<TRow> {
   key: string;
@@ -19,6 +19,8 @@ export interface SortableColumn<TRow> {
   align?: 'left' | 'right' | 'center';
   // 数値ソートしたい列は true（accessor の結果が文字列でも Number() で比較）
   numeric?: boolean;
+  // QueryBar 側でフィルタ対象にする場合のヒント
+  filter?: ColumnFilterSpec;
 }
 
 type Direction = 'asc' | 'desc';
@@ -34,6 +36,9 @@ export interface SortableTableProps<TRow> {
   rowKey: (row: TRow, index: number) => string;
   // 既定のソート（複数指定可、配列の先頭ほど優先）
   defaultSort?: SortKey | SortKey[];
+  // 制御モード: sort と onSortChange を両方渡すと内部 state を使わない
+  sort?: SortKey[];
+  onSortChange?: (next: SortKey[]) => void;
   onRowClick?: (row: TRow) => void;
 }
 
@@ -42,35 +47,49 @@ export function SortableTable<TRow>({
   rows,
   rowKey,
   defaultSort,
+  sort: controlledSort,
+  onSortChange,
   onRowClick,
 }: SortableTableProps<TRow>) {
   const initial: SortKey[] = useMemo(() => {
     if (!defaultSort) return [];
     return Array.isArray(defaultSort) ? defaultSort : [defaultSort];
   }, [defaultSort]);
-  const [sort, setSort] = useState<SortKey[]>(initial);
+  const [internalSort, setInternalSort] = useState<SortKey[]>(initial);
+
+  // 制御モード判定: sort と onSortChange の両方が渡されたときのみ
+  const isControlled = controlledSort !== undefined && onSortChange !== undefined;
+  const sort = isControlled ? (controlledSort ?? []) : internalSort;
+
+  function setSort(next: SortKey[]) {
+    if (isControlled) {
+      onSortChange(next);
+    } else {
+      setInternalSort(next);
+    }
+  }
 
   function toggle(key: string) {
     const col = columns.find((c) => c.key === key);
     const defaultDir: Direction = col?.numeric ? 'desc' : 'asc';
 
-    setSort((prev) => {
-      const idx = prev.findIndex((s) => s.key === key);
-      if (idx < 0) {
-        // 未指定 → 末尾に追加（デフォルト方向）
-        return [...prev, { key, direction: defaultDir }];
-      }
-      const cur = prev[idx];
-      if (!cur) return prev;
-      if (cur.direction === defaultDir) {
-        // デフォルト方向 → 反対方向に反転（優先度はそのまま）
-        const next = [...prev];
-        next[idx] = { key, direction: defaultDir === 'asc' ? 'desc' : 'asc' };
-        return next;
-      }
-      // 反対方向まで進んでいる → 削除
-      return prev.filter((s) => s.key !== key);
-    });
+    const idx = sort.findIndex((s) => s.key === key);
+    if (idx < 0) {
+      // 未指定 → 末尾に追加（デフォルト方向）
+      setSort([...sort, { key, direction: defaultDir }]);
+      return;
+    }
+    const cur = sort[idx];
+    if (!cur) return;
+    if (cur.direction === defaultDir) {
+      // デフォルト方向 → 反対方向に反転（優先度はそのまま）
+      const next = [...sort];
+      next[idx] = { key, direction: defaultDir === 'asc' ? 'desc' : 'asc' };
+      setSort(next);
+      return;
+    }
+    // 反対方向まで進んでいる → 削除
+    setSort(sort.filter((s) => s.key !== key));
   }
 
   function resetSort() {
@@ -83,8 +102,7 @@ export function SortableTable<TRow>({
       const col = columns.find((c) => c.key === s.key);
       const acc =
         col?.accessor ??
-        ((r: TRow) =>
-          (r as Record<string, unknown>)[s.key] as string | number | null | undefined);
+        ((r: TRow) => (r as Record<string, unknown>)[s.key] as string | number | null | undefined);
       return {
         acc,
         numeric: col?.numeric ?? false,
@@ -120,7 +138,7 @@ export function SortableTable<TRow>({
     return m;
   }, [sort]);
 
-  // 現在のソート状態を文字で表示するためのラベル
+  // 現在のソート状態を文字で表示するためのラベル (非制御モード時のみ)
   const sortSummary = useMemo(() => {
     return sort
       .map((s) => {
@@ -131,9 +149,12 @@ export function SortableTable<TRow>({
       .join('  →  ');
   }, [sort, columns]);
 
+  // 制御モード時は親 (QueryBar) がソート表示を担当するので、テーブル内のサマリは出さない
+  const showSummary = !isControlled && sort.length > 0;
+
   return (
     <Card withBorder p="xs" style={{ overflowX: 'auto' }}>
-      {sort.length > 0 && (
+      {showSummary && (
         <Group gap="xs" mb="xs" align="center">
           <Text size="xs" c="dimmed">
             ソート: {sortSummary}
