@@ -11,4 +11,4 @@ play_hours:
 
 # 最短プレイ時間 (秒)。これ未満の duration_sec のランは ingest 時に除外する。
 # 客がすぐ離れたケースや動作確認リセットを分析対象から外すため。
-min_duration_sec: 10
+min_duration_sec: 30
