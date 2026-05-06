@@ -47,7 +47,9 @@ export type Manifest = z.infer<typeof ManifestSchema>;
 export type ManifestDataset = z.infer<typeof ManifestDatasetSchema>;
 
 export async function fetchManifest(): Promise<Manifest> {
-  const res = await fetch(manifestUrl());
+  // ingest 後に manifest.json を更新しても、ブラウザの HTTP キャッシュで古い件数が
+  // 表示され続ける問題を防ぐため、ここだけは常に再検証させる。
+  const res = await fetch(manifestUrl(), { cache: 'no-cache' });
   if (!res.ok) throw new Error(`manifest fetch failed: ${res.status}`);
   const json = await res.json();
   return ManifestSchema.parse(json);
