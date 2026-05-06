@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T07:10:43.020Z",
+  "generatedAt": "2026-05-06T14:44:42.116Z",
   "datasets": [
     {
       "eventSlug": "gemudan12-demo-2026-05",
@@ -17,10 +17,11 @@
         "play_hours": {
           "start": "11:00",
           "end": "17:00"
-        }
+        },
+        "min_duration_sec": 10
       },
-      "runCount": 34,
-      "eventCount": 4929,
+      "runCount": 30,
+      "eventCount": 4925,
       "errorCount": 6,
       "period": {
         "from": "2026-05-03T02:05:43.618Z",
@@ -44,10 +45,11 @@
         "play_hours": {
           "start": "11:00",
           "end": "17:00"
-        }
+        },
+        "min_duration_sec": 10
       },
-      "runCount": 59,
-      "eventCount": 9478,
+      "runCount": 54,
+      "eventCount": 9470,
       "errorCount": 252,
       "period": {
         "from": "2026-05-03T02:05:43.618Z",

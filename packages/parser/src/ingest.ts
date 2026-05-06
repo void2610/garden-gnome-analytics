@@ -94,6 +94,9 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
           end: hhmmToMin(playHours.end),
         }
       : null;
+    // 最短プレイ時間 (秒)。未指定なら null = 除外しない。
+    const minDurationSec = ds.eventMeta?.min_duration_sec ?? null;
+    let dsTooShortCount = 0;
 
     for (let i = 0; i < ds.runLogPaths.length; i++) {
       const rp = ds.runLogPaths[i];
@@ -124,6 +127,13 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
           );
           continue;
         }
+      }
+
+      // 最短プレイ時間チェック: 短すぎるランは即離脱や動作確認リセットとみなして除外
+      if (minDurationSec != null && summary.durationSec != null && summary.durationSec < minDurationSec) {
+        dsTooShortCount += 1;
+        log.info(`  excluded (duration ${summary.durationSec.toFixed(1)}s < ${minDurationSec}s): ${rp}`);
+        continue;
       }
 
       // events 行を生成
@@ -200,6 +210,11 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
 
     if (dsExcludedCount > 0) {
       log.info(`  ${ds.eventSlug}/${ds.deviceSlug}: ${dsExcludedCount} ラン除外 (play_hours 外)`);
+    }
+    if (dsTooShortCount > 0) {
+      log.info(
+        `  ${ds.eventSlug}/${ds.deviceSlug}: ${dsTooShortCount} ラン除外 (min_duration_sec ${minDurationSec}s 未満)`,
+      );
     }
 
     // run に紐付かない errors も収録（run 範囲外）

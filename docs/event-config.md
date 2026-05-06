@@ -62,6 +62,10 @@ slug: gemudan12-demo-2026-05
 play_hours:
   start: "11:00"
   end: "17:00"
+
+# 最短プレイ時間 (秒)。duration_sec がこの値未満のランは ingest 時に除外。
+# 客がすぐ離脱したケースや、開発者の動作確認リセットを分析対象から外すために使う。
+min_duration_sec: 10
 ```
 
 ### `play_hours` の挙動
@@ -70,6 +74,12 @@ play_hours:
 - run の出力をスキップするのに加え、その run 範囲内のエラー、および run に紐付かない
   orphan エラーログのうち時間帯外のものも除外する。
 - 設定変更後は `pnpm ingest --clean` を流して `public-data/` を再生成する必要がある。
+
+### `min_duration_sec` の挙動
+
+- `duration_sec` が値未満のランをスキップ (run 本体と、その範囲内に紐付くエラーも除外)。
+- `duration_sec` が取得できないラン (started_at / ended_at が両方無い場合) は除外しない。
+- 未指定なら除外しない。
 
 ## `config/exclude_errors.yaml` (全イベント共通、任意)
 

@@ -36,6 +36,10 @@ export const EventMetaSchema = z.object({
       end: z.string().regex(/^\d{2}:\d{2}$/),
     })
     .optional(),
+  // 最短プレイ時間 (秒)。これ未満の duration_sec のランは ingest 時に除外する。
+  // 客がすぐ離脱したケースや、開発者の動作確認リセットを分析対象から外すのに使う。
+  // 未指定なら除外しない。
+  min_duration_sec: z.number().nonnegative().optional(),
 });
 
 export type EventMeta = z.infer<typeof EventMetaSchema>;
