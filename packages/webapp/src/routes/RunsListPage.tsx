@@ -167,8 +167,6 @@ export function RunsListPage() {
     [rows, columns, tableQuery.tf],
   );
 
-  const sort = tableQuery.ts ?? DEFAULT_SORT;
-
   return (
     <Stack>
       <Title order={2}>ラン一覧</Title>
@@ -185,8 +183,11 @@ export function RunsListPage() {
           columns={columns}
           rows={visibleRows}
           rowKey={(r) => `${r.event_slug}__${r.device_slug}__${r.run_id}`}
-          sort={sort}
-          onSortChange={(s) => setTableQuery({ ...tableQuery, ts: s })}
+          sort={tableQuery.ts}
+          defaultSort={DEFAULT_SORT}
+          onSortChange={(s) =>
+            setTableQuery({ ...tableQuery, ts: s.length > 0 ? s : undefined })
+          }
         />
       )}
     </Stack>

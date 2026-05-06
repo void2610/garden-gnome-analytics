@@ -233,7 +233,6 @@ export function StagesPage() {
     () => applyTableQuery(rows ?? [], COLUMNS, { tf: tableQuery.tf }),
     [rows, tableQuery.tf],
   );
-  const sort = tableQuery.ts ?? DEFAULT_SORT;
 
   return (
     <Stack>
@@ -254,8 +253,11 @@ export function StagesPage() {
           columns={COLUMNS}
           rows={visibleRows}
           rowKey={(r) => r.stage_type}
-          sort={sort}
-          onSortChange={(s) => setTableQuery({ ...tableQuery, ts: s })}
+          sort={tableQuery.ts}
+          defaultSort={DEFAULT_SORT}
+          onSortChange={(s) =>
+            setTableQuery({ ...tableQuery, ts: s.length > 0 ? s : undefined })
+          }
         />
       )}
       {rows && rows.length === 0 && <Text c="dimmed">該当するステージなし</Text>}

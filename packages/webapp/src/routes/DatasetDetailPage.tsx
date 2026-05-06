@@ -211,8 +211,11 @@ export function DatasetDetailPage() {
           columns={RUN_COLUMNS}
           rows={visibleRuns}
           rowKey={(r) => `${r.event_slug}__${r.device_slug}__${r.run_id}`}
-          sort={tableQuery.ts ?? DEFAULT_SORT}
-          onSortChange={(s) => setTableQuery({ ...tableQuery, ts: s })}
+          sort={tableQuery.ts}
+          defaultSort={DEFAULT_SORT}
+          onSortChange={(s) =>
+            setTableQuery({ ...tableQuery, ts: s.length > 0 ? s : undefined })
+          }
         />
       )}
     </Stack>

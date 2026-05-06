@@ -220,8 +220,11 @@ export function CardsPage() {
                 columns={usageColumns}
                 rows={usageVisible}
                 rowKey={(r) => `${r.card_name}-${r.growth_stage}`}
-                sort={usageTQ.query.ts ?? USAGE_DEFAULT_SORT}
-                onSortChange={(s) => usageTQ.setQuery({ ...usageTQ.query, ts: s })}
+                sort={usageTQ.query.ts}
+                defaultSort={USAGE_DEFAULT_SORT}
+                onSortChange={(s) =>
+                  usageTQ.setQuery({ ...usageTQ.query, ts: s.length > 0 ? s : undefined })
+                }
               />
             )}
           </Stack>
@@ -234,8 +237,11 @@ export function CardsPage() {
               columns={pickColumns}
               rows={pickVisible}
               rowKey={(r) => r.card}
-              sort={pickTQ.query.ts ?? PICK_DEFAULT_SORT}
-              onSortChange={(s) => pickTQ.setQuery({ ...pickTQ.query, ts: s })}
+              sort={pickTQ.query.ts}
+              defaultSort={PICK_DEFAULT_SORT}
+              onSortChange={(s) =>
+                pickTQ.setQuery({ ...pickTQ.query, ts: s.length > 0 ? s : undefined })
+              }
             />
           </Stack>
         </Tabs.Panel>
@@ -254,8 +260,11 @@ export function CardsPage() {
               columns={outcomeColumns}
               rows={outcomeVisible}
               rowKey={(r) => r.card_name}
-              sort={outcomeTQ.query.ts ?? OUTCOME_DEFAULT_SORT}
-              onSortChange={(s) => outcomeTQ.setQuery({ ...outcomeTQ.query, ts: s })}
+              sort={outcomeTQ.query.ts}
+              defaultSort={OUTCOME_DEFAULT_SORT}
+              onSortChange={(s) =>
+                outcomeTQ.setQuery({ ...outcomeTQ.query, ts: s.length > 0 ? s : undefined })
+              }
             />
           </Stack>
         </Tabs.Panel>

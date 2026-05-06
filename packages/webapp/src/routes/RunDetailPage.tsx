@@ -251,8 +251,11 @@ export function RunDetailPage() {
                 columns={timelineColumns}
                 rows={visibleEvents}
                 rowKey={(r) => String(r.seq)}
-                sort={timelineTQ.query.ts ?? TIMELINE_DEFAULT_SORT}
-                onSortChange={(s) => timelineTQ.setQuery({ ...timelineTQ.query, ts: s })}
+                sort={timelineTQ.query.ts}
+                defaultSort={TIMELINE_DEFAULT_SORT}
+                onSortChange={(s) =>
+                  timelineTQ.setQuery({ ...timelineTQ.query, ts: s.length > 0 ? s : undefined })
+                }
               />
             </ScrollArea>
           </Stack>

@@ -142,7 +142,6 @@ export function ErrorsPage() {
     () => applyTableQuery(rows ?? [], COLUMNS, { tf: tableQuery.tf }),
     [rows, tableQuery.tf],
   );
-  const sort = tableQuery.ts ?? DEFAULT_SORT;
 
   return (
     <Stack>
@@ -160,8 +159,11 @@ export function ErrorsPage() {
           columns={COLUMNS}
           rows={visibleRows}
           rowKey={(r, i) => `${r.level}-${i}`}
-          sort={sort}
-          onSortChange={(s) => setTableQuery({ ...tableQuery, ts: s })}
+          sort={tableQuery.ts}
+          defaultSort={DEFAULT_SORT}
+          onSortChange={(s) =>
+            setTableQuery({ ...tableQuery, ts: s.length > 0 ? s : undefined })
+          }
         />
       )}
       {rows && rows.length === 0 && <Text c="dimmed">エラーなし</Text>}
