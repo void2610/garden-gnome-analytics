@@ -27,6 +27,10 @@
 - ingest は手元で実行し、生成物 (`public-data/`) を git 管理してそのまま
   GitHub Pages に載せる静的 SPA 構成。生ログ自体はコミットしない。
 
+## 変更の入れ方
+
+PR は作らず、main に直接コミットして push する (ゲーム本体は PR を通す)。
+
 ## 設定変更時のお作法
 
 `event.yaml` / `meta.yaml` / `exclude_errors.yaml` のいずれかを変更したら:
