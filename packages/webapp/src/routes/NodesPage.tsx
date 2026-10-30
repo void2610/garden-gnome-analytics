@@ -4,6 +4,7 @@ import { EventAggregateTable } from '../components/EventAggregateTable';
 import { FilterBar } from '../components/FilterBar';
 import type { SortableColumn } from '../components/SortableTable';
 import { avgColumn, numberColumn, rateColumn, textColumn } from '../lib/columns';
+import { withoutStageSql } from '../queries/cards';
 import { payloadText, whereEvents } from '../queries/enemies';
 
 interface NodeRow {
@@ -82,8 +83,6 @@ const TREASURE_NODE_COLUMNS: SortableColumn<TreasureNodeRow>[] = [
 
 // ノードの ID は Layer3_1_Battle のように末尾がノードの種類
 const nodeTypeSql = (column: string) => `split_part(${column}, '_', 3)`;
-// カードは Olive(Seed) のように成長段階が付くので外してまとめる
-const withoutStageSql = (column: string) => `regexp_replace(${column}, '\\(.*\\)$', '')`;
 
 const nodeSql = (from: string, where: string) => `
   WITH ev AS (
