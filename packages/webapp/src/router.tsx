@@ -18,6 +18,7 @@ import { EnemiesPage } from './routes/EnemiesPage';
 import { BattlesPage } from './routes/BattlesPage';
 import { BoardPage } from './routes/BoardPage';
 import { NodesPage } from './routes/NodesPage';
+import { RestEventsPage } from './routes/RestEventsPage';
 
 const filterSearchSchema = FilterSchema;
 
@@ -117,6 +118,13 @@ const nodesRoute = createRoute({
   component: NodesPage,
 });
 
+const restEventsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'rest-events',
+  validateSearch: filterSearchSchema,
+  component: RestEventsPage,
+});
+
 const heatmapRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'heatmap',
@@ -157,6 +165,7 @@ const routeTree = rootRoute.addChildren([
   battlesRoute,
   boardRoute,
   nodesRoute,
+  restEventsRoute,
   heatmapRoute,
   errorsRoute,
   compareRoute,
