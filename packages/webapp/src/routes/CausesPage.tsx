@@ -129,7 +129,7 @@ export function CausesPage() {
         <Title order={2}>原因分析</Title>
         <Text c="dimmed" size="sm">
           戦闘のダメージ・撃破・敗北・状態異常の増減が、何によって起きたか。原因はゲームが記録した
-          「種類:詳細」で、敵は戦闘内の通し番号を外してアセット名ごとにまとめる。原因を記録していない古いログは集計に出ない。
+          「種類:詳細」で、敵は戦闘内の通し番号を外してアセット名ごとにまとめる。古いログは原因を表示名で書いているので、表示名がそのまま種類の列に出る。
         </Text>
         <FilterBar filter={search} navigateTo={{ to: '/causes' }} />
       </Stack>
