@@ -301,6 +301,25 @@ describe('parseRunLogLine', () => {
     if (r.ok) expect((r.value.body as Record<string, unknown>)[key]).toBe(expected);
   });
 
+  it.each([
+    [
+      '2026-10-30T16:15:08.892|TutorialStepShown|stepId=tutorial_rest_intro|pageCount=4',
+      'pageCount',
+      4,
+    ],
+    [
+      '2026-10-30T16:15:10.903|TutorialStepClosed|stepId=tutorial_rest_intro',
+      'stepId',
+      'tutorial_rest_intro',
+    ],
+    ['2026-10-29T10:11:50.000|IdlePaused', 'event', 'IdlePaused'],
+    ['2026-10-29T10:11:58.500|IdleResumed', 'event', 'IdleResumed'],
+  ])('%s を読める', (line, key, expected) => {
+    const r = parseRunLogLine(line);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect((r.value.body as Record<string, unknown>)[key]).toBe(expected);
+  });
+
   it('未知イベントは unknown_event として返す', () => {
     const r = parseRunLogLine('2026-05-03T11:24:04.727|TotallyUnknownEvent|foo=bar');
     expect(r.ok).toBe(false);
