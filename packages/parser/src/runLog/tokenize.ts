@@ -9,6 +9,25 @@ export interface RunLogTokens {
 
 const ISO_RE = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3})$/;
 
+// ゲームは値の中の \ | = 改行を \\ \p \e \n に置き換えて書く (区切りと見分けるため)
+const ESCAPES: Record<string, string> = { '\\': '\\', p: '|', e: '=', n: '\n' };
+
+function unescapeValue(value: string): string {
+  if (!value.includes('\\')) return value;
+  let result = '';
+  for (let i = 0; i < value.length; i++) {
+    const ch = value[i];
+    const next = value[i + 1];
+    if (ch === '\\' && next !== undefined && next in ESCAPES) {
+      result += ESCAPES[next];
+      i++;
+    } else {
+      result += ch;
+    }
+  }
+  return result;
+}
+
 export function tokenizeRunLogLine(line: string): RunLogTokens | null {
   if (line.length === 0) return null;
   const parts = line.split('|');
@@ -25,7 +44,7 @@ export function tokenizeRunLogLine(line: string): RunLogTokens | null {
     const eq = seg.indexOf('=');
     if (eq < 0) continue;
     const key = seg.slice(0, eq);
-    const value = seg.slice(eq + 1);
+    const value = unescapeValue(seg.slice(eq + 1));
     params[key] = value;
   }
 
