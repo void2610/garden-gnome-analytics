@@ -164,6 +164,42 @@ export const RestChoiceSchema = evt('RestChoice', {
 
 export const TreasureCollectedSchema = evt('TreasureCollected', {
   position: z.string().optional(),
+  item: z.string().optional(),
+  how: z.string().optional(),
+});
+
+export const TreasureOpenFailedSchema = evt('TreasureOpenFailed', {
+  position: z.string().optional(),
+  how: z.string().optional(),
+});
+
+export const PlantTriggeredSchema = evt('PlantTriggered', {
+  cardName: z.string().optional(),
+  growthStage: z.string().optional(),
+  position: z.string().optional(),
+  targets: z.string().optional(),
+  remainingTurns: intFromString.optional(),
+});
+
+export const PlantRemovedSchema = evt('PlantRemoved', {
+  cardName: z.string().optional(),
+  growthStage: z.string().optional(),
+  position: z.string().optional(),
+  reason: z.string().optional(),
+  cardDestination: z.string().optional(),
+  source: z.string().optional(),
+});
+
+export const ObstaclePlacedSchema = evt('ObstaclePlaced', {
+  obstacle: z.string().optional(),
+  position: z.string().optional(),
+  source: z.string().optional(),
+});
+
+export const ObstacleRemovedSchema = evt('ObstacleRemoved', {
+  obstacle: z.string().optional(),
+  position: z.string().optional(),
+  reason: z.string().optional(),
 });
 
 export const StageEventSelectedSchema = evt('StageEventSelected', {
@@ -381,6 +417,11 @@ export const RUN_EVENT_SCHEMAS = [
   CardBlockedSchema,
   HandCardSelectedSchema,
   HandCardSelectionSkippedSchema,
+  TreasureOpenFailedSchema,
+  PlantTriggeredSchema,
+  PlantRemovedSchema,
+  ObstaclePlacedSchema,
+  ObstacleRemovedSchema,
 ] as const;
 
 // 数値文字列を保持するための helper
