@@ -62,8 +62,6 @@ export function aggregateRun(input: AggregateInput): RunSummary {
         break;
       case 'BattleLose':
         battleLossCount += 1;
-        if (typeof b.remainHp === 'number') finalHp = b.remainHp;
-        if (typeof b.maxHp === 'number') maxHp = b.maxHp;
         lastHpZero = true;
         break;
       case 'TurnStart':
@@ -77,9 +75,9 @@ export function aggregateRun(input: AggregateInput): RunSummary {
         }
         break;
       case 'PlayerDamaged':
-        if (typeof b.hp === 'number') {
-          finalHp = b.hp;
-          if (b.hp <= 0) lastHpZero = true;
+        if (typeof b.remainHp === 'number') {
+          finalHp = b.remainHp;
+          if (b.remainHp <= 0) lastHpZero = true;
         }
         break;
       case 'SessionEnd':

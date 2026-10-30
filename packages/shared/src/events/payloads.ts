@@ -1,4 +1,4 @@
-// 21 種のイベント payload を Zod で定義
+// run ログのイベント payload を Zod で定義する。キーはゲーム側の Docs/analytics-log-spec.md に合わせる
 import { z } from 'zod';
 
 // 文字列パラメータを受け取り、整数化するプリプロセス
@@ -18,13 +18,18 @@ const numFromString = z.preprocess((v) => {
   return v;
 }, z.number());
 
-// 共通プレフィックスとして event 名を持つ
+// 共通プレフィックスとして event 名を持つ。スキーマに無いキーも捨てずに文字列のまま残す (ゲーム側で増えた項目を取りこぼさない)
 function evt<TName extends string, TShape extends z.ZodRawShape>(name: TName, shape: TShape) {
-  return z.object({ event: z.literal(name), ...shape });
+  return z.object({ event: z.literal(name), ...shape }).passthrough();
 }
 
 export const SessionStartSchema = evt('SessionStart', {});
-export const SessionEndSchema = evt('SessionEnd', {});
+export const SessionEndSchema = evt('SessionEnd', {
+  result: z.string().optional(),
+  totalTime: z.string().optional(),
+  reachedStage: z.string().optional(),
+  cause: z.string().optional(),
+});
 
 export const StageEnterSchema = evt('StageEnter', {
   stageType: z.string().optional(),
@@ -33,6 +38,7 @@ export const StageEnterSchema = evt('StageEnter', {
 
 export const BattleStartSchema = evt('BattleStart', {
   stageId: z.string().optional(),
+  mapName: z.string().optional(),
   enemyCount: intFromString.optional(),
   // 文字列のまま保持（後段で parseDeckCards を呼ぶ）
   deckCards: z.string().optional(),
@@ -75,9 +81,11 @@ export const PlayerHealthChangedSchema = evt('PlayerHealthChanged', {
 });
 
 export const PlayerDamagedSchema = evt('PlayerDamaged', {
-  damage: intFromString.optional(),
+  rawDamage: intFromString.optional(),
+  blockedDamage: intFromString.optional(),
+  actualDamage: intFromString.optional(),
+  remainHp: intFromString.optional(),
   source: z.string().optional(),
-  hp: intFromString.optional(),
 });
 
 const CardPlayLikeShape = {
@@ -91,6 +99,8 @@ export const CardCancelledSchema = evt('CardCancelled', CardPlayLikeShape);
 export const CardPlayFailedSchema = evt('CardPlayFailed', {
   ...CardPlayLikeShape,
   reason: z.string().optional(),
+  requiredCost: intFromString.optional(),
+  currentCost: intFromString.optional(),
 });
 
 export const PlantPlacedSchema = evt('PlantPlaced', {
@@ -114,36 +124,38 @@ export const RewardSelectedSchema = evt('RewardSelected', {
 export const ShopBuySchema = evt('ShopBuy', {
   itemType: z.string().optional(),
   itemName: z.string().optional(),
-  cost: intFromString.optional(),
+  price: intFromString.optional(),
+  remainingCoins: intFromString.optional(),
 });
 
 export const ShopExitSchema = evt('ShopExit', {
-  remainingGold: intFromString.optional(),
+  purchaseCount: intFromString.optional(),
+  remainingCoins: intFromString.optional(),
 });
 
 export const RestChoiceSchema = evt('RestChoice', {
   choice: z.string().optional(),
+  hpBefore: intFromString.optional(),
+  hpAfter: intFromString.optional(),
+  maxHp: intFromString.optional(),
 });
 
 export const TreasureCollectedSchema = evt('TreasureCollected', {
-  itemName: z.string().optional(),
-  itemType: z.string().optional(),
+  position: z.string().optional(),
 });
 
 export const StageEventSelectedSchema = evt('StageEventSelected', {
-  eventId: z.string().optional(),
-  choice: z.string().optional(),
+  eventName: z.string().optional(),
+  optionIndex: intFromString.optional(),
 });
 
 export const CultivationResultSchema = evt('CultivationResult', {
-  cardName: z.string().optional(),
-  fromStage: z.string().optional(),
-  toStage: z.string().optional(),
+  grownCards: z.string().optional(),
+  witheredCards: z.string().optional(),
 });
 
 export const ItemUsedSchema = evt('ItemUsed', {
   itemName: z.string().optional(),
-  itemType: z.string().optional(),
 });
 
 export const RewardSkippedSchema = evt('RewardSkipped', {
@@ -153,9 +165,6 @@ export const RewardSkippedSchema = evt('RewardSkipped', {
 
 export const BattleLoseSchema = evt('BattleLose', {
   turnCount: intFromString.optional(),
-  remainHp: intFromString.optional(),
-  maxHp: intFromString.optional(),
-  killedEnemies: intFromString.optional(),
   elapsedTime: z.string().optional(),
 });
 
