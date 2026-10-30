@@ -491,6 +491,18 @@ export const StageEventExecutedSchema = evt('StageEventExecuted', {
   resultKey: z.string().optional(),
 });
 
+export const TutorialStepShownSchema = evt('TutorialStepShown', {
+  stepId: z.string().optional(),
+  pageCount: intFromString.optional(),
+});
+export const TutorialStepClosedSchema = evt('TutorialStepClosed', {
+  stepId: z.string().optional(),
+});
+
+// 展示モードで放置のオーバーレイが出た / 操作が戻った
+export const IdlePausedSchema = evt('IdlePaused', {});
+export const IdleResumedSchema = evt('IdleResumed', {});
+
 export const RUN_EVENT_SCHEMAS = [
   SessionStartSchema,
   SessionEndSchema,
@@ -573,6 +585,10 @@ export const RUN_EVENT_SCHEMAS = [
   CultivationGrowthSchema,
   StageEventShownSchema,
   StageEventExecutedSchema,
+  TutorialStepShownSchema,
+  TutorialStepClosedSchema,
+  IdlePausedSchema,
+  IdleResumedSchema,
 ] as const;
 
 // 数値文字列を保持するための helper
