@@ -123,6 +123,43 @@ describe('parseRunLogLine', () => {
     expect(parseRunLogLine('2026-10-30T16:59:14.614|EnemySelectionCancelled').ok).toBe(true);
   });
 
+  // ゲーム側の戦闘の流れとカードの記録 (the-garden-of-garden-gnome #621)
+  it.each([
+    [
+      '2026-10-30T16:12:39.216|BattleStart|stageId=Layer0_0_Battle|nodeType=Battle|mapName=fixed_stairs_behind_enemy|enemyCount=1|enemies=Aohaacari#0@4,4|playerStart=3,4|exits=1@0,6>Layer1_0_Event|treasureCount=0|deckCards=Olive(Seed)',
+      'treasureCount',
+      0,
+    ],
+    [
+      '2026-10-30T16:36:17.600|BattleWin|turnCount=3|remainHp=80|maxHp=100|killedEnemies=2|elapsedTime=40.1s|reason=Exit|exitIndex=0|exitNumber=1|exitPosition=0,6|nextNode=Layer1_0_Event',
+      'exitNumber',
+      1,
+    ],
+    ['2026-10-30T16:57:30.357|TurnSkipped|turnNumber=3|reason=Sleep', 'reason', 'Sleep'],
+    ['2026-10-30T16:57:30.175|DeckReshuffled|cardCount=12', 'cardCount', 12],
+    [
+      '2026-10-30T16:57:49.520|CardPlayed|cardName=Olive|growthStage=Bloom|cost=3|kind=direction|direction=Left|position=7,7|targets=Aohaacari#0@4,7',
+      'targets',
+      'Aohaacari#0@4,7',
+    ],
+    ['2026-10-30T16:57:30.194|CardBlocked|cardName=Olive|reason=Sealed', 'reason', 'Sealed'],
+    ['2026-10-30T16:57:30.194|CardCancelled|cardName=Olive|via=HandClick', 'via', 'HandClick'],
+    [
+      '2026-10-30T16:11:49.793|HandCardSelected|selectionType=Exhaust|cardName=Fraxinus(Seed)',
+      'cardName',
+      'Fraxinus(Seed)',
+    ],
+    [
+      '2026-10-30T16:57:29.873|HandCardSelectionSkipped|selectionType=Exhaust',
+      'selectionType',
+      'Exhaust',
+    ],
+  ])('%s を読める', (line, key, expected) => {
+    const r = parseRunLogLine(line);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect((r.value.body as Record<string, unknown>)[key]).toBe(expected);
+  });
+
   it('未知イベントは unknown_event として返す', () => {
     const r = parseRunLogLine('2026-05-03T11:24:04.727|TotallyUnknownEvent|foo=bar');
     expect(r.ok).toBe(false);
