@@ -16,6 +16,7 @@ import { StagesPage } from './routes/StagesPage';
 import { CausesPage } from './routes/CausesPage';
 import { EnemiesPage } from './routes/EnemiesPage';
 import { BattlesPage } from './routes/BattlesPage';
+import { BoardPage } from './routes/BoardPage';
 
 const filterSearchSchema = FilterSchema;
 
@@ -101,6 +102,13 @@ const battlesRoute = createRoute({
   component: BattlesPage,
 });
 
+const boardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'board',
+  validateSearch: filterSearchSchema,
+  component: BoardPage,
+});
+
 const heatmapRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'heatmap',
@@ -139,6 +147,7 @@ const routeTree = rootRoute.addChildren([
   causesRoute,
   enemiesRoute,
   battlesRoute,
+  boardRoute,
   heatmapRoute,
   errorsRoute,
   compareRoute,
