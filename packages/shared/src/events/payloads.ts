@@ -364,6 +364,74 @@ export const HandCardSelectionSkippedSchema = evt('HandCardSelectionSkipped', {
   selectionType: z.string().optional(),
 });
 
+export const MapStructureSchema = evt('MapStructure', {
+  source: z.string().optional(),
+  current: z.string().optional(),
+  visited: z.string().optional(),
+  nodes: z.string().optional(),
+  edges: z.string().optional(),
+});
+
+export const NodeSelectedSchema = evt('NodeSelected', {
+  stageId: z.string().optional(),
+  available: z.string().optional(),
+});
+
+export const StageCompletedSchema = evt('StageCompleted', {
+  stageId: z.string().optional(),
+  exitIndex: intFromString.optional(),
+  unlocked: z.string().optional(),
+});
+
+const RewardCandidatesShape = { cards: z.string().optional(), relic: z.string().optional() };
+export const RewardOfferedSchema = evt('RewardOffered', {
+  coinReward: intFromString.optional(),
+  nutritionReward: intFromString.optional(),
+  ...RewardCandidatesShape,
+});
+export const RewardSelectionOpenedSchema = evt('RewardSelectionOpened', RewardCandidatesShape);
+
+export const ShopOpenedSchema = evt('ShopOpened', {
+  cards: z.string().optional(),
+  relics: z.string().optional(),
+  items: z.string().optional(),
+  bookCovers: z.string().optional(),
+  removalPrice: intFromString.optional(),
+  randomCardPrice: intFromString.optional(),
+  randomRelicPrice: intFromString.optional(),
+  randomItemPrice: intFromString.optional(),
+  discountPercent: intFromString.optional(),
+  coins: intFromString.optional(),
+});
+
+export const ShopBuyFailedSchema = evt('ShopBuyFailed', {
+  itemType: z.string().optional(),
+  itemName: z.string().optional(),
+  price: intFromString.optional(),
+  reason: z.string().optional(),
+});
+
+export const ShopRemoveCancelledSchema = evt('ShopRemoveCancelled', {
+  price: intFromString.optional(),
+});
+
+export const TreasureNodeOfferedSchema = evt('TreasureNodeOffered', {
+  relic: z.string().optional(),
+  cost: intFromString.optional(),
+  currentTime: intFromString.optional(),
+  canOpen: z.string().optional(),
+});
+
+export const TreasureNodeOpenedSchema = evt('TreasureNodeOpened', {
+  relic: z.string().optional(),
+  cost: intFromString.optional(),
+  obtained: z.string().optional(),
+});
+
+export const TreasureNodeSkippedSchema = evt('TreasureNodeSkipped', {
+  relic: z.string().optional(),
+});
+
 export const RUN_EVENT_SCHEMAS = [
   SessionStartSchema,
   SessionEndSchema,
@@ -422,6 +490,17 @@ export const RUN_EVENT_SCHEMAS = [
   PlantRemovedSchema,
   ObstaclePlacedSchema,
   ObstacleRemovedSchema,
+  MapStructureSchema,
+  NodeSelectedSchema,
+  StageCompletedSchema,
+  RewardOfferedSchema,
+  RewardSelectionOpenedSchema,
+  ShopOpenedSchema,
+  ShopBuyFailedSchema,
+  ShopRemoveCancelledSchema,
+  TreasureNodeOfferedSchema,
+  TreasureNodeOpenedSchema,
+  TreasureNodeSkippedSchema,
 ] as const;
 
 // 数値文字列を保持するための helper
