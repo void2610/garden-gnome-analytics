@@ -17,36 +17,17 @@ YYYY-MM-DD HH:MM:SS.fff [Level] message
 ```
 
 タイムゾーン情報は付与されない（ローカル時刻として解釈）。リスト値は `;` 区切り。
-`Olive(Seed)` のように `()` 付きでカード成長段階を表す。
+`Olive(Seed)` のように `()` 付きでカード成長段階を表す。値の中の `\` `|` `=` 改行は、ゲームが `\\` `\p` `\e` `\n` にエスケープして書くので、読むときに戻す。
 
-## イベント一覧（21 種）
+## イベントとキー
 
-| event | 主要パラメータ |
-| --- | --- |
-| SessionStart | （なし） |
-| SessionEnd | （なし） |
-| StageEnter | stageType, stageId |
-| BattleStart | stageId, enemyCount, deckCards |
-| BattleWin | turnCount, remainHp, maxHp, killedEnemies, elapsedTime |
-| TurnStart | turnNumber, hp, maxHp, cost, maxCost, block, handCount |
-| TurnEnd | turnNumber, remainingMovePoints, remainingCost, handCardNames |
-| PlayerMoved | from, to, moveDistance, remainingMovePoints |
-| PlayerHealthChanged | hp |
-| PlayerDamaged | damage, source, hp |
-| CardPlayed | cardName, growthStage, cost, target |
-| CardCancelled | 同上 |
-| CardPlayFailed | 同上 + reason |
-| PlantPlaced | cardName, position, direction, growthStage |
-| EnemyDefeated | enemyName, turnNumber |
-| RewardSelected | type, selected, choices |
-| ShopBuy | itemType, itemName, cost |
-| ShopExit | remainingGold |
-| RestChoice | choice |
-| TreasureCollected | itemName, itemType |
-| StageEventSelected | eventId, choice |
-| CultivationResult | cardName, fromStage, toStage |
+イベントとキーの正は、ゲーム側の [`Docs/analytics-log-spec.md`](https://github.com/void2610-org/the-garden-of-garden-gnome/blob/main/Docs/analytics-log-spec.md)。
+分析側で読むイベントは `packages/shared/src/events/payloads.ts` の `RUN_EVENT_SCHEMAS` に並べる。ここにスキーマを足せば、読めるイベントの名前と型にも入る。
+
+- スキーマに書いたキーは型 (数値は `intFromString`) で読み、書いていないキーも文字列のまま payload に残す
+- 全キーが省略可能なので、古いログで欠けているキーは payload に出ず、SQL の `json_extract` は NULL を返す
 
 ## 未知イベントの扱い
 
-仕様外イベントが将来増える可能性に備え、`safeParse` 失敗を `unknown_event` として記録し、
-ingest を止めない方針。warn ログのみ。
+`RUN_EVENT_SCHEMAS` に無いイベントの行は `unknown_event` として捨て、ingest は止めない (warn ログのみ)。
+ゲーム側でイベントを足したら、ここにスキーマを足す。
