@@ -112,7 +112,10 @@ export const PlantPlacedSchema = evt('PlantPlaced', {
 
 export const EnemyDefeatedSchema = evt('EnemyDefeated', {
   enemyName: z.string().optional(),
+  enemy: z.string().optional(),
   turnNumber: intFromString.optional(),
+  position: z.string().optional(),
+  killedBy: z.string().optional(),
 });
 
 export const RewardSelectedSchema = evt('RewardSelected', {
@@ -166,6 +169,25 @@ export const RewardSkippedSchema = evt('RewardSkipped', {
 export const BattleLoseSchema = evt('BattleLose', {
   turnCount: intFromString.optional(),
   elapsedTime: z.string().optional(),
+  cause: z.string().optional(),
+});
+
+export const StatusEffectChangedSchema = evt('StatusEffectChanged', {
+  target: z.string().optional(),
+  type: z.string().optional(),
+  change: z.string().optional(),
+  delta: intFromString.optional(),
+  stacks: intFromString.optional(),
+  source: z.string().optional(),
+});
+
+export const EnemyDamageTakenSchema = evt('EnemyDamageTaken', {
+  enemy: z.string().optional(),
+  rawDamage: intFromString.optional(),
+  blockedDamage: intFromString.optional(),
+  actualDamage: intFromString.optional(),
+  remainHp: intFromString.optional(),
+  source: z.string().optional(),
 });
 
 export const ConfusedTurnSchema = evt('ConfusedTurn', {
@@ -246,6 +268,8 @@ export const RUN_EVENT_SCHEMAS = [
   PlantGrowthSchema,
   RelicObtainedSchema,
   RelicTriggeredSchema,
+  StatusEffectChangedSchema,
+  EnemyDamageTakenSchema,
 ] as const;
 
 // 数値文字列を保持するための helper
