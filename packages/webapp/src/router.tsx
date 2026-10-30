@@ -19,6 +19,7 @@ import { BattlesPage } from './routes/BattlesPage';
 import { BoardPage } from './routes/BoardPage';
 import { NodesPage } from './routes/NodesPage';
 import { RestEventsPage } from './routes/RestEventsPage';
+import { TutorialIdlePage } from './routes/TutorialIdlePage';
 
 const filterSearchSchema = FilterSchema;
 
@@ -125,6 +126,13 @@ const restEventsRoute = createRoute({
   component: RestEventsPage,
 });
 
+const tutorialIdleRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'tutorial-idle',
+  validateSearch: filterSearchSchema,
+  component: TutorialIdlePage,
+});
+
 const heatmapRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'heatmap',
@@ -166,6 +174,7 @@ const routeTree = rootRoute.addChildren([
   boardRoute,
   nodesRoute,
   restEventsRoute,
+  tutorialIdleRoute,
   heatmapRoute,
   errorsRoute,
   compareRoute,
