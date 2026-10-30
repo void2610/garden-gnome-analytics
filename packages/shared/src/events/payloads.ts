@@ -168,6 +168,47 @@ export const BattleLoseSchema = evt('BattleLose', {
   elapsedTime: z.string().optional(),
 });
 
+export const ConfusedTurnSchema = evt('ConfusedTurn', {
+  turnNumber: intFromString.optional(),
+});
+
+export const StageEventLoseSchema = evt('StageEventLose', {
+  eventName: z.string().optional(),
+  optionIndex: intFromString.optional(),
+});
+
+const CardMoveShape = { cardName: z.string().optional() };
+export const CardDrawnSchema = evt('CardDrawn', CardMoveShape);
+export const CardDiscardedSchema = evt('CardDiscarded', CardMoveShape);
+export const CardExhaustedSchema = evt('CardExhausted', CardMoveShape);
+
+export const EnemyDamagedSchema = evt('EnemyDamaged', {
+  enemyName: z.string().optional(),
+  damage: intFromString.optional(),
+});
+
+export const EnemySpawnedSchema = evt('EnemySpawned', {
+  enemyName: z.string().optional(),
+});
+
+export const ItemObtainedSchema = evt('ItemObtained', {
+  itemName: z.string().optional(),
+});
+
+export const PlantGrowthSchema = evt('PlantGrowth', {
+  cardName: z.string().optional(),
+  oldStage: z.string().optional(),
+  newStage: z.string().optional(),
+});
+
+export const RelicObtainedSchema = evt('RelicObtained', {
+  relicName: z.string().optional(),
+});
+
+export const RelicTriggeredSchema = evt('RelicTriggered', {
+  relicName: z.string().optional(),
+});
+
 export const RUN_EVENT_SCHEMAS = [
   SessionStartSchema,
   SessionEndSchema,
@@ -194,6 +235,17 @@ export const RUN_EVENT_SCHEMAS = [
   ItemUsedSchema,
   RewardSkippedSchema,
   BattleLoseSchema,
+  ConfusedTurnSchema,
+  StageEventLoseSchema,
+  CardDrawnSchema,
+  CardDiscardedSchema,
+  CardExhaustedSchema,
+  EnemyDamagedSchema,
+  EnemySpawnedSchema,
+  ItemObtainedSchema,
+  PlantGrowthSchema,
+  RelicObtainedSchema,
+  RelicTriggeredSchema,
 ] as const;
 
 // 数値文字列を保持するための helper
