@@ -1,34 +1,8 @@
-import { z } from 'zod';
+import { RUN_EVENT_SCHEMAS } from './payloads';
 
-// 設計ドキュメントに記載された 21 種のイベント
-export const EventNameSchema = z.enum([
-  'SessionStart',
-  'SessionEnd',
-  'StageEnter',
-  'BattleStart',
-  'BattleWin',
-  'TurnStart',
-  'TurnEnd',
-  'PlayerMoved',
-  'PlayerHealthChanged',
-  'PlayerDamaged',
-  'CardPlayed',
-  'CardCancelled',
-  'CardPlayFailed',
-  'PlantPlaced',
-  'EnemyDefeated',
-  'RewardSelected',
-  'ShopBuy',
-  'ShopExit',
-  'RestChoice',
-  'TreasureCollected',
-  'StageEventSelected',
-  'CultivationResult',
-  'ItemUsed',
-  'RewardSkipped',
-  'BattleLose',
-]);
+export type EventName = (typeof RUN_EVENT_SCHEMAS)[number]['shape']['event']['value'];
 
-export type EventName = z.infer<typeof EventNameSchema>;
-
-export const KNOWN_EVENT_NAMES: ReadonlyArray<EventName> = EventNameSchema.options;
+// スキーマの一覧から作るので、スキーマを足せばそのイベントも読めるようになる
+export const KNOWN_EVENT_NAMES: ReadonlyArray<EventName> = RUN_EVENT_SCHEMAS.map(
+  (schema) => schema.shape.event.value,
+);
