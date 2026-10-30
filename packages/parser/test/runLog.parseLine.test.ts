@@ -245,6 +245,62 @@ describe('parseRunLogLine', () => {
     if (r.ok) expect((r.value.body as Record<string, unknown>)[key]).toBe(expected);
   });
 
+  it.each([
+    [
+      '2026-10-30T16:10:06.682|RestEntered|hp=100|maxHp=100|time=30|nutrition=100',
+      'nutrition',
+      100,
+    ],
+    ['2026-10-30T16:10:06.847|CultivationEntered|field=|time=30|nutrition=100', 'field', ''],
+    [
+      '2026-10-30T16:10:07.360|CultivationExited|field=0:Acanthocereus(Seed),w4,f4',
+      'field',
+      '0:Acanthocereus(Seed),w4,f4',
+    ],
+    [
+      '2026-10-30T16:10:07.300|CultivationPlant|card=Acanthocereus(Seed)|slot=0|previousCard=|continuousCropping=False',
+      'continuousCropping',
+      'False',
+    ],
+    [
+      '2026-10-30T16:10:07.309|CultivationWater|card=Acanthocereus(Seed)|slot=0|waterLevel=1',
+      'waterLevel',
+      1,
+    ],
+    [
+      '2026-10-30T16:10:07.337|CultivationFertilize|card=Acanthocereus(Seed)|slot=0|fertilizerLevel=1',
+      'fertilizerLevel',
+      1,
+    ],
+    ['2026-10-30T16:14:56.000|CultivationCure|card=Olive(Seed)|slot=0', 'slot', 0],
+    ['2026-10-30T16:14:56.987|CultivationRemove|card=Olive(Seed)|slot=0', 'card', 'Olive(Seed)'],
+    [
+      '2026-10-30T16:14:57.000|CultivationSick|card=Olive(Seed)|slot=0|waterLevel=0|fertilizerLevel=0|continuousCropping=True',
+      'fertilizerLevel',
+      0,
+    ],
+    ['2026-10-30T16:14:57.692|CultivationWither|card=Olive(Seed)|slot=0', 'card', 'Olive(Seed)'],
+    [
+      '2026-10-30T16:10:07.400|CultivationGrowth|card=Acanthocereus(Sprout)|slot=0|points=3|totalPoints=3|evolved=True',
+      'totalPoints',
+      3,
+    ],
+    [
+      '2026-10-30T16:13:18.030|StageEventShown|eventName=TestProgressCondition|options=0:blocked(RunCounterAtLeastCondition);1:ok',
+      'options',
+      '0:blocked(RunCounterAtLeastCondition);1:ok',
+    ],
+    [
+      '2026-10-30T16:14:55.184|StageEventExecuted|eventName=Test|optionIndex=0|executed=0:ConsumeTimeAction;1:AddCoinsAction|skipped=|resultKey=EVENT_Test_OPTION_0_RESULT',
+      'resultKey',
+      'EVENT_Test_OPTION_0_RESULT',
+    ],
+  ])('%s を読める', (line, key, expected) => {
+    const r = parseRunLogLine(line);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect((r.value.body as Record<string, unknown>)[key]).toBe(expected);
+  });
+
   it('未知イベントは unknown_event として返す', () => {
     const r = parseRunLogLine('2026-05-03T11:24:04.727|TotallyUnknownEvent|foo=bar');
     expect(r.ok).toBe(false);
