@@ -35,3 +35,14 @@ export function rateColumn<T>(key: keyof T & string, label: string): SortableCol
     filter: { kind: 'number' },
   };
 }
+
+// 平均値を小数 1 桁で出す。値が無いときは -
+export function avgColumn<T>(key: keyof T & string, label: string): SortableColumn<T> {
+  return {
+    ...numberColumn<T>(key, label),
+    render: (r) => {
+      const v = r[key] as number | null;
+      return v == null ? '-' : v.toFixed(1);
+    },
+  };
+}
