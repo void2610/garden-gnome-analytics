@@ -53,6 +53,39 @@ describe('parseRunLogLine', () => {
     if (r.ok) expect((r.value.body as Record<string, unknown>)[key]).toBe(expected);
   });
 
+  // ゲーム側の原因の記録 (the-garden-of-garden-gnome #613・#614)
+  it.each([
+    [
+      '2026-10-30T15:02:11.120|PlayerDamaged|rawDamage=5|blockedDamage=2|actualDamage=3|remainHp=40|source=Enemy:TestEnemyAttacker#0',
+      'source',
+      'Enemy:TestEnemyAttacker#0',
+    ],
+    [
+      '2026-10-30T15:02:11.120|StatusEffectChanged|target=Player|type=Poison|change=Reduced|delta=-1|stacks=1|source=TurnStart',
+      'delta',
+      -1,
+    ],
+    [
+      '2026-10-30T15:02:11.120|EnemyDamageTaken|enemy=Slime#1|rawDamage=6|blockedDamage=0|actualDamage=6|remainHp=6|source=Card:Olive',
+      'actualDamage',
+      6,
+    ],
+    [
+      '2026-10-30T15:02:11.120|EnemyDefeated|enemy=Slime#1|turnNumber=2|position=4,7|killedBy=Status:Poison',
+      'killedBy',
+      'Status:Poison',
+    ],
+    [
+      '2026-10-30T15:02:11.120|BattleLose|turnCount=4|elapsedTime=31.2s|cause=Enemy:Shiroikona#0',
+      'cause',
+      'Enemy:Shiroikona#0',
+    ],
+  ])('%s を読める', (line, key, expected) => {
+    const r = parseRunLogLine(line);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect((r.value.body as Record<string, unknown>)[key]).toBe(expected);
+  });
+
   it('未知イベントは unknown_event として返す', () => {
     const r = parseRunLogLine('2026-05-03T11:24:04.727|TotallyUnknownEvent|foo=bar');
     expect(r.ok).toBe(false);
