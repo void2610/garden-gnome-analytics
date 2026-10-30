@@ -37,6 +37,25 @@ describe('aggregateRun', () => {
     expect(r.outcome).toBe('loss');
   });
 
+  it('被ダメージで残りの HP が 0 になったら loss', () => {
+    const r = aggregateRun({
+      runId: 'r1',
+      eventSlug: 'e',
+      deviceSlug: 'd',
+      events: [
+        ev('2026-05-03T10:00:00.000', { event: 'SessionStart' }),
+        ev('2026-05-03T10:01:00.000', {
+          event: 'PlayerDamaged',
+          actualDamage: 5,
+          remainHp: 0,
+          source: 'Enemy:Slime#0',
+        }),
+      ],
+    });
+    expect(r.outcome).toBe('loss');
+    expect(r.finalHp).toBe(0);
+  });
+
   it('SessionEnd なしで HP > 0 なら abandoned', () => {
     const r = aggregateRun({
       runId: 'r1',

@@ -8,9 +8,9 @@ import { runIngest } from '../../src/ingest';
 
 const RUN_LOG = `2026-05-03T11:23:37.468|SessionStart
 2026-05-03T11:23:43.343|StageEnter|stageType=Battle|stageId=Layer0_0
-2026-05-03T11:23:43.347|BattleStart|stageId=Layer0_0_Battle|enemyCount=2|deckCards=Olive(Seed);Fraxinus(Seed)
+2026-05-03T11:23:43.347|BattleStart|stageId=Layer0_0_Battle|mapName=Stage1_Map01|enemyCount=2|deckCards=Olive(Seed);Fraxinus(Seed)|nodeType=Battle
 2026-05-03T11:24:45.643|BattleWin|turnCount=2|remainHp=80|maxHp=100|killedEnemies=2|elapsedTime=62.3s
-2026-05-03T11:25:10.000|SessionEnd
+2026-05-03T11:25:10.000|SessionEnd|result=Win|totalTime=92.5s|reachedStage=Layer0_0_Battle
 `;
 
 const NORMAL_LOG = `2026-05-03 11:23:37.500 [Log] [AnalyticsLogger] ランログ開始: /tmp/run_20260503_112337_468.log
@@ -75,6 +75,15 @@ describe('runIngest 統合テスト', () => {
     );
     const rows = res.getRowObjects();
     expect(Number(rows[0]?.c)).toBe(result.events);
+
+    // スキーマにある mapName と、スキーマに無い nodeType の両方が payload に残る
+    const battleStart = await conn.runAndReadAll(
+      `SELECT payload FROM read_parquet('${outDir}/events/event=*/device=*/data.parquet') WHERE event_type = 'BattleStart'`,
+    );
+    const payload = JSON.parse(String(battleStart.getRowObjects()[0]?.payload));
+    expect(payload.mapName).toBe('Stage1_Map01');
+    expect(payload.nodeType).toBe('Battle');
+    expect(manifest.datasets[0].hasMapName).toBe(true);
     conn.disconnectSync();
   });
 });
