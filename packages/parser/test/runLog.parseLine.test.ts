@@ -190,6 +190,61 @@ describe('parseRunLogLine', () => {
     if (r.ok) expect((r.value.body as Record<string, unknown>)[key]).toBe(expected);
   });
 
+  // ゲーム側のマップ・報酬・ショップ・宝箱ノードの記録 (the-garden-of-garden-gnome #624)
+  it.each([
+    [
+      '2026-10-30T16:15:00.637|MapStructure|source=Generated|current=Layer0_0_Battle|visited=|nodes=Layer0_0_Battle;Layer1_0_Battle|edges=Layer0_0_Battle>Layer1_0_Battle',
+      'source',
+      'Generated',
+    ],
+    [
+      '2026-10-30T17:01:38.195|NodeSelected|stageId=Layer1_1_Event|available=Layer1_0_Battle;Layer1_1_Event',
+      'available',
+      'Layer1_0_Battle;Layer1_1_Event',
+    ],
+    [
+      '2026-10-30T16:15:00.803|StageCompleted|stageId=Layer0_0_Battle|exitIndex=-1|unlocked=Layer1_0_Battle;Layer1_1_Event',
+      'exitIndex',
+      -1,
+    ],
+    [
+      '2026-10-30T16:59:24.560|RewardOffered|coinReward=19|nutritionReward=10|cards=Dryasegg(Seed);Siren(Seed)|relic=DiamondScythe',
+      'coinReward',
+      19,
+    ],
+    [
+      '2026-10-30T16:59:24.566|RewardSelectionOpened|cards=Dryasegg(Seed);Siren(Seed)|relic=DiamondScythe',
+      'relic',
+      'DiamondScythe',
+    ],
+    [
+      '2026-10-30T17:02:06.780|ShopOpened|cards=DogBarometz(Seed)@58|relics=DivineSakeVial@117|items=ThreadOfFate@60|bookCovers=UndinePattern@105|removalPrice=50|randomCardPrice=50|randomRelicPrice=100|randomItemPrice=25|discountPercent=0|coins=999',
+      'coins',
+      999,
+    ],
+    [
+      '2026-10-30T17:02:07.588|ShopBuyFailed|itemType=RandomItem|itemName=ReedFlute|price=25|reason=InventoryFull',
+      'reason',
+      'InventoryFull',
+    ],
+    ['2026-10-30T17:02:07.588|ShopRemoveCancelled|price=50', 'price', 50],
+    [
+      '2026-10-30T17:02:08.122|TreasureNodeOffered|relic=OblivionChair|cost=5|currentTime=30|canOpen=True',
+      'currentTime',
+      30,
+    ],
+    [
+      '2026-10-30T16:14:54.708|TreasureNodeOpened|relic=LaurelWreath|cost=5|obtained=True',
+      'obtained',
+      'True',
+    ],
+    ['2026-10-30T17:02:08.275|TreasureNodeSkipped|relic=OblivionChair', 'relic', 'OblivionChair'],
+  ])('%s を読める', (line, key, expected) => {
+    const r = parseRunLogLine(line);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect((r.value.body as Record<string, unknown>)[key]).toBe(expected);
+  });
+
   it('未知イベントは unknown_event として返す', () => {
     const r = parseRunLogLine('2026-05-03T11:24:04.727|TotallyUnknownEvent|foo=bar');
     expect(r.ok).toBe(false);
