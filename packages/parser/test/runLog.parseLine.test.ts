@@ -86,6 +86,43 @@ describe('parseRunLogLine', () => {
     if (r.ok) expect((r.value.body as Record<string, unknown>)[key]).toBe(expected);
   });
 
+  // ゲーム側の敵のターンの記録 (the-garden-of-garden-gnome #620)
+  it.each([
+    [
+      '2026-10-30T16:12:39.220|EnemyIntent|turnNumber=1|enemy=Aohaacari#0|action=AttackAndBlock|actionType=AttackAndBlockAction|values=Damage:5;Block:10|position=4,4',
+      'values',
+      'Damage:5;Block:10',
+    ],
+    ['2026-10-30T16:59:36.152|EnemyTurnStart|turnNumber=1|aliveEnemies=1', 'aliveEnemies', 1],
+    ['2026-10-30T15:57:10.307|EnemyMoved|enemy=Mochinoha#2|from=4,6|to=5,6', 'to', '5,6'],
+    [
+      '2026-10-30T16:59:36.152|EnemyAction|enemy=TestEnemyAttacker#0|action=SimpleAttack|actionType=SimpleAttackAction|position=6,7|playerInRange=True|hp=9999|block=0|values=Damage:5',
+      'hp',
+      9999,
+    ],
+    [
+      '2026-10-30T16:59:36.152|EnemyActionInterrupted|enemy=Slime#0|action=SimpleAttack|reason=Died',
+      'reason',
+      'Died',
+    ],
+    [
+      '2026-10-30T16:05:56.263|EnemyTurnSkipped|enemy=TestEnemyInvulnerable#0|reason=Sleep',
+      'reason',
+      'Sleep',
+    ],
+    ['2026-10-30T16:05:56.263|EnemyConfused|enemy=Slime#0', 'enemy', 'Slime#0'],
+    ['2026-10-30T16:59:14.614|EnemySelected|enemy=Aohaacari#0', 'enemy', 'Aohaacari#0'],
+    ['2026-10-30T16:59:14.614|EnemySpawned|enemy=Aohaacari#0|position=4,4', 'position', '4,4'],
+  ])('%s を読める', (line, key, expected) => {
+    const r = parseRunLogLine(line);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect((r.value.body as Record<string, unknown>)[key]).toBe(expected);
+  });
+
+  it('EnemySelectionCancelled はキーが無くても読める', () => {
+    expect(parseRunLogLine('2026-10-30T16:59:14.614|EnemySelectionCancelled').ok).toBe(true);
+  });
+
   it('未知イベントは unknown_event として返す', () => {
     const r = parseRunLogLine('2026-05-03T11:24:04.727|TotallyUnknownEvent|foo=bar');
     expect(r.ok).toBe(false);
