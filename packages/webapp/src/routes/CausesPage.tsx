@@ -3,6 +3,7 @@ import { useSearch } from '@tanstack/react-router';
 import { EventAggregateTable } from '../components/EventAggregateTable';
 import { FilterBar } from '../components/FilterBar';
 import type { SortableColumn } from '../components/SortableTable';
+import { numberColumn } from '../lib/columns';
 import { causeDetailSql, causeKindLabel, causeKindSql } from '../queries/causes';
 
 interface CauseRow {
@@ -40,15 +41,6 @@ const causeColumns = <T extends CauseRow>(): SortableColumn<T>[] => [
   },
   { key: 'detail', label: '原因', accessor: (r) => r.detail, filter: { kind: 'text' } },
 ];
-
-const numberColumn = <T,>(key: keyof T & string, label: string): SortableColumn<T> => ({
-  key,
-  label,
-  accessor: (r) => r[key] as number,
-  numeric: true,
-  align: 'right',
-  filter: { kind: 'number' },
-});
 
 const DAMAGE_COLUMNS: SortableColumn<DamageRow>[] = [
   ...causeColumns<DamageRow>(),
