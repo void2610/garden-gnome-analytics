@@ -211,7 +211,62 @@ export const EnemyDamagedSchema = evt('EnemyDamaged', {
 
 export const EnemySpawnedSchema = evt('EnemySpawned', {
   enemyName: z.string().optional(),
+  enemy: z.string().optional(),
+  position: z.string().optional(),
 });
+
+export const EnemyIntentSchema = evt('EnemyIntent', {
+  turnNumber: intFromString.optional(),
+  enemy: z.string().optional(),
+  action: z.string().optional(),
+  actionType: z.string().optional(),
+  values: z.string().optional(),
+  position: z.string().optional(),
+});
+
+export const EnemyTurnStartSchema = evt('EnemyTurnStart', {
+  turnNumber: intFromString.optional(),
+  aliveEnemies: intFromString.optional(),
+});
+
+export const EnemyMovedSchema = evt('EnemyMoved', {
+  enemy: z.string().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+});
+
+export const EnemyActionSchema = evt('EnemyAction', {
+  enemy: z.string().optional(),
+  action: z.string().optional(),
+  actionType: z.string().optional(),
+  position: z.string().optional(),
+  // C# の bool を ToString した True / False
+  playerInRange: z.string().optional(),
+  hp: intFromString.optional(),
+  block: intFromString.optional(),
+  values: z.string().optional(),
+});
+
+export const EnemyActionInterruptedSchema = evt('EnemyActionInterrupted', {
+  enemy: z.string().optional(),
+  action: z.string().optional(),
+  reason: z.string().optional(),
+});
+
+export const EnemyTurnSkippedSchema = evt('EnemyTurnSkipped', {
+  enemy: z.string().optional(),
+  reason: z.string().optional(),
+});
+
+export const EnemyConfusedSchema = evt('EnemyConfused', {
+  enemy: z.string().optional(),
+});
+
+export const EnemySelectedSchema = evt('EnemySelected', {
+  enemy: z.string().optional(),
+});
+
+export const EnemySelectionCancelledSchema = evt('EnemySelectionCancelled', {});
 
 export const ItemObtainedSchema = evt('ItemObtained', {
   itemName: z.string().optional(),
@@ -270,6 +325,15 @@ export const RUN_EVENT_SCHEMAS = [
   RelicTriggeredSchema,
   StatusEffectChangedSchema,
   EnemyDamageTakenSchema,
+  EnemyIntentSchema,
+  EnemyTurnStartSchema,
+  EnemyMovedSchema,
+  EnemyActionSchema,
+  EnemyActionInterruptedSchema,
+  EnemyTurnSkippedSchema,
+  EnemyConfusedSchema,
+  EnemySelectedSchema,
+  EnemySelectionCancelledSchema,
 ] as const;
 
 // 数値文字列を保持するための helper
