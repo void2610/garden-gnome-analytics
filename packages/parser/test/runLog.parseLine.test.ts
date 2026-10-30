@@ -160,6 +160,36 @@ describe('parseRunLogLine', () => {
     if (r.ok) expect((r.value.body as Record<string, unknown>)[key]).toBe(expected);
   });
 
+  // ゲーム側の盤面の記録 (the-garden-of-garden-gnome #623)
+  it.each([
+    [
+      '2026-10-30T16:11:09.836|PlantTriggered|cardName=Dryasegg|growthStage=Seed|position=7,6|targets=|remainingTurns=1',
+      'remainingTurns',
+      1,
+    ],
+    [
+      '2026-10-30T16:58:24.849|PlantRemoved|cardName=Mandragora|growthStage=Seed|position=7,6|reason=Effect|cardDestination=Exhaust|source=Card:Raskovnik',
+      'cardDestination',
+      'Exhaust',
+    ],
+    [
+      '2026-10-30T16:10:52.556|ObstaclePlaced|obstacle=Bridge|position=7,5|source=Card:Kawanosentakubasami',
+      'obstacle',
+      'Bridge',
+    ],
+    [
+      '2026-10-30T16:10:53.731|ObstacleRemoved|obstacle=Bridge|position=7,5|reason=Destroyed',
+      'reason',
+      'Destroyed',
+    ],
+    ['2026-10-30T16:10:17.805|TreasureCollected|position=7,4|item=Honey|how=Step', 'how', 'Step'],
+    ['2026-10-30T16:10:17.805|TreasureOpenFailed|position=7,4|how=Effect', 'how', 'Effect'],
+  ])('%s を読める', (line, key, expected) => {
+    const r = parseRunLogLine(line);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect((r.value.body as Record<string, unknown>)[key]).toBe(expected);
+  });
+
   it('未知イベントは unknown_event として返す', () => {
     const r = parseRunLogLine('2026-05-03T11:24:04.727|TotallyUnknownEvent|foo=bar');
     expect(r.ok).toBe(false);
