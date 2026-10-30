@@ -432,6 +432,65 @@ export const TreasureNodeSkippedSchema = evt('TreasureNodeSkipped', {
   relic: z.string().optional(),
 });
 
+export const RestEnteredSchema = evt('RestEntered', {
+  hp: intFromString.optional(),
+  maxHp: intFromString.optional(),
+  time: intFromString.optional(),
+  nutrition: intFromString.optional(),
+});
+
+// 畑の状態は「番号:カード(段階),w水,f肥料[,sick]」を ; で並べたもの
+export const CultivationEnteredSchema = evt('CultivationEntered', {
+  field: z.string().optional(),
+  time: intFromString.optional(),
+  nutrition: intFromString.optional(),
+});
+export const CultivationExitedSchema = evt('CultivationExited', { field: z.string().optional() });
+
+const CultivationSlotShape = { card: z.string().optional(), slot: intFromString.optional() };
+export const CultivationPlantSchema = evt('CultivationPlant', {
+  ...CultivationSlotShape,
+  previousCard: z.string().optional(),
+  continuousCropping: z.string().optional(),
+});
+export const CultivationWaterSchema = evt('CultivationWater', {
+  ...CultivationSlotShape,
+  waterLevel: intFromString.optional(),
+});
+export const CultivationFertilizeSchema = evt('CultivationFertilize', {
+  ...CultivationSlotShape,
+  fertilizerLevel: intFromString.optional(),
+});
+export const CultivationCureSchema = evt('CultivationCure', CultivationSlotShape);
+export const CultivationRemoveSchema = evt('CultivationRemove', CultivationSlotShape);
+export const CultivationSickSchema = evt('CultivationSick', {
+  ...CultivationSlotShape,
+  waterLevel: intFromString.optional(),
+  fertilizerLevel: intFromString.optional(),
+  continuousCropping: z.string().optional(),
+});
+export const CultivationWitherSchema = evt('CultivationWither', CultivationSlotShape);
+export const CultivationGrowthSchema = evt('CultivationGrowth', {
+  ...CultivationSlotShape,
+  points: intFromString.optional(),
+  totalPoints: intFromString.optional(),
+  evolved: z.string().optional(),
+});
+
+// 選択肢は「添字:ok」か「添字:blocked(満たしていない最初の条件か、実行できない最初の効果の型名)」を ; で並べたもの
+export const StageEventShownSchema = evt('StageEventShown', {
+  eventName: z.string().optional(),
+  options: z.string().optional(),
+});
+
+export const StageEventExecutedSchema = evt('StageEventExecuted', {
+  eventName: z.string().optional(),
+  optionIndex: intFromString.optional(),
+  executed: z.string().optional(),
+  skipped: z.string().optional(),
+  resultKey: z.string().optional(),
+});
+
 export const RUN_EVENT_SCHEMAS = [
   SessionStartSchema,
   SessionEndSchema,
@@ -501,6 +560,19 @@ export const RUN_EVENT_SCHEMAS = [
   TreasureNodeOfferedSchema,
   TreasureNodeOpenedSchema,
   TreasureNodeSkippedSchema,
+  RestEnteredSchema,
+  CultivationEnteredSchema,
+  CultivationExitedSchema,
+  CultivationPlantSchema,
+  CultivationWaterSchema,
+  CultivationFertilizeSchema,
+  CultivationCureSchema,
+  CultivationRemoveSchema,
+  CultivationSickSchema,
+  CultivationWitherSchema,
+  CultivationGrowthSchema,
+  StageEventShownSchema,
+  StageEventExecutedSchema,
 ] as const;
 
 // 数値文字列を保持するための helper
