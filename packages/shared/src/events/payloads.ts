@@ -38,7 +38,12 @@ export const StageEnterSchema = evt('StageEnter', {
 
 export const BattleStartSchema = evt('BattleStart', {
   stageId: z.string().optional(),
+  nodeType: z.string().optional(),
   mapName: z.string().optional(),
+  enemies: z.string().optional(),
+  playerStart: z.string().optional(),
+  exits: z.string().optional(),
+  treasureCount: intFromString.optional(),
   enemyCount: intFromString.optional(),
   // 文字列のまま保持（後段で parseDeckCards を呼ぶ）
   deckCards: z.string().optional(),
@@ -50,6 +55,11 @@ export const BattleWinSchema = evt('BattleWin', {
   maxHp: intFromString.optional(),
   killedEnemies: intFromString.optional(),
   elapsedTime: z.string().optional(),
+  reason: z.string().optional(),
+  exitIndex: intFromString.optional(),
+  exitNumber: intFromString.optional(),
+  exitPosition: z.string().optional(),
+  nextNode: z.string().optional(),
 });
 
 export const TurnStartSchema = evt('TurnStart', {
@@ -94,8 +104,17 @@ const CardPlayLikeShape = {
   cost: intFromString.optional(),
   target: z.string().optional(),
 };
-export const CardPlayedSchema = evt('CardPlayed', CardPlayLikeShape);
-export const CardCancelledSchema = evt('CardCancelled', CardPlayLikeShape);
+export const CardPlayedSchema = evt('CardPlayed', {
+  ...CardPlayLikeShape,
+  kind: z.string().optional(),
+  direction: z.string().optional(),
+  position: z.string().optional(),
+  targets: z.string().optional(),
+});
+export const CardCancelledSchema = evt('CardCancelled', {
+  ...CardPlayLikeShape,
+  via: z.string().optional(),
+});
 export const CardPlayFailedSchema = evt('CardPlayFailed', {
   ...CardPlayLikeShape,
   reason: z.string().optional(),
@@ -286,6 +305,29 @@ export const RelicTriggeredSchema = evt('RelicTriggered', {
   relicName: z.string().optional(),
 });
 
+export const TurnSkippedSchema = evt('TurnSkipped', {
+  turnNumber: intFromString.optional(),
+  reason: z.string().optional(),
+});
+
+export const DeckReshuffledSchema = evt('DeckReshuffled', {
+  cardCount: intFromString.optional(),
+});
+
+export const CardBlockedSchema = evt('CardBlocked', {
+  cardName: z.string().optional(),
+  reason: z.string().optional(),
+});
+
+export const HandCardSelectedSchema = evt('HandCardSelected', {
+  selectionType: z.string().optional(),
+  cardName: z.string().optional(),
+});
+
+export const HandCardSelectionSkippedSchema = evt('HandCardSelectionSkipped', {
+  selectionType: z.string().optional(),
+});
+
 export const RUN_EVENT_SCHEMAS = [
   SessionStartSchema,
   SessionEndSchema,
@@ -334,6 +376,11 @@ export const RUN_EVENT_SCHEMAS = [
   EnemyConfusedSchema,
   EnemySelectedSchema,
   EnemySelectionCancelledSchema,
+  TurnSkippedSchema,
+  DeckReshuffledSchema,
+  CardBlockedSchema,
+  HandCardSelectedSchema,
+  HandCardSelectionSkippedSchema,
 ] as const;
 
 // 数値文字列を保持するための helper
