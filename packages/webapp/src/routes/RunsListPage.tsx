@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { FilterBar } from '../components/FilterBar';
 import { QueryBar } from '../components/QueryBar';
 import { QueryError } from '../components/QueryError';
-import { SortableTable, type SortableColumn, type SortKey } from '../components/SortableTable';
+import { type SortKey, type SortableColumn, SortableTable } from '../components/SortableTable';
 import { useManifest } from '../hooks/useManifest';
 import { useUrlTableQuery } from '../hooks/useTableQuery';
 import { query } from '../lib/duckdb/query';
@@ -30,6 +30,7 @@ const OUTCOME_OPTIONS = [
   { value: 'win', label: 'win' },
   { value: 'loss', label: 'loss' },
   { value: 'abandoned', label: 'abandoned' },
+  { value: 'tutorial', label: 'tutorial' },
 ];
 
 const DEFAULT_SORT: SortKey[] = [{ key: 'started_at', direction: 'desc' }];
@@ -185,9 +186,7 @@ export function RunsListPage() {
           rowKey={(r) => `${r.event_slug}__${r.device_slug}__${r.run_id}`}
           sort={tableQuery.ts}
           defaultSort={DEFAULT_SORT}
-          onSortChange={(s) =>
-            setTableQuery({ ...tableQuery, ts: s.length > 0 ? s : undefined })
-          }
+          onSortChange={(s) => setTableQuery({ ...tableQuery, ts: s.length > 0 ? s : undefined })}
         />
       )}
     </Stack>
@@ -200,6 +199,8 @@ function outcomeColor(outcome: string): string {
       return 'green';
     case 'loss':
       return 'red';
+    case 'tutorial':
+      return 'blue';
     default:
       return 'gray';
   }

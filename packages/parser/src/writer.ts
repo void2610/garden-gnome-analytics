@@ -2,6 +2,7 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { DuckDBInstance } from '@duckdb/node-api';
+import type { RunOutcome } from './aggregateRun';
 
 // イベント 1 行分の NDJSON シリアライズ用 (型は緩く)
 export interface EventRow {
@@ -28,7 +29,7 @@ export interface RunRow {
   final_hp: number | null;
   max_hp: number | null;
   final_deck_size: number | null;
-  outcome: 'win' | 'loss' | 'abandoned';
+  outcome: RunOutcome;
   game_version: string | null;
 }
 

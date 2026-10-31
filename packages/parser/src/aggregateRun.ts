@@ -1,7 +1,7 @@
 // 1 ラン分の RunEvent[] からサマリ行を作る純関数
 import type { RunEvent } from '@gga/shared';
 
-export type RunOutcome = 'win' | 'loss' | 'abandoned';
+export type RunOutcome = 'win' | 'loss' | 'abandoned' | 'tutorial';
 
 export interface RunSummary {
   runId: string;
@@ -42,13 +42,17 @@ export function aggregateRun(input: AggregateInput): RunSummary {
   let maxHp: number | undefined;
   let finalDeckSize: number | undefined;
   let hasSessionEnd = false;
+  let sessionResult: string | undefined;
   let lastHpZero = false;
+  let lastStageId: string | undefined;
 
   for (const ev of events) {
     const b = ev.body;
     switch (b.event) {
       case 'StageEnter':
-        stageCount += 1;
+        // 同じノードを続けて押して二重に入場した記録 (2026-10 のゲムダン14 までのビルド) は 1 回と数える
+        if (b.stageId === undefined || b.stageId !== lastStageId) stageCount += 1;
+        lastStageId = b.stageId;
         break;
       case 'BattleStart':
         if (b.deckCards) {
@@ -82,12 +86,15 @@ export function aggregateRun(input: AggregateInput): RunSummary {
         break;
       case 'SessionEnd':
         hasSessionEnd = true;
+        sessionResult = b.result;
         break;
     }
   }
 
   let outcome: RunOutcome;
-  if (lastHpZero) {
+  if (sessionResult !== undefined) {
+    outcome = outcomeFromResult(sessionResult);
+  } else if (lastHpZero) {
     outcome = 'loss';
   } else if (hasSessionEnd) {
     outcome = 'win';
@@ -111,4 +118,18 @@ export function aggregateRun(input: AggregateInput): RunSummary {
     outcome,
     gameVersion: input.gameVersion,
   };
+}
+
+// SessionEnd の result から勝敗を決める。タイトルへ戻った・放置・時間切れ・終了は途中で終わったラン
+function outcomeFromResult(result: string): RunOutcome {
+  switch (result) {
+    case 'Win':
+      return 'win';
+    case 'Lose':
+      return 'loss';
+    case 'TutorialClear':
+      return 'tutorial';
+    default:
+      return 'abandoned';
+  }
 }
