@@ -41,7 +41,7 @@ public-data/
 | battle_loss_count | INTEGER | BattleLose または HP=0 数 |
 | final_hp / max_hp | INTEGER | |
 | final_deck_size | INTEGER | 最終 BattleStart の deckCards 件数 |
-| outcome | VARCHAR | win / loss / abandoned |
+| outcome | VARCHAR | win / loss / abandoned / tutorial (SessionEnd の result から決める。タイトルへ戻った・放置・時間切れ・終了は abandoned、チュートリアル戦闘のランは tutorial) |
 | game_version | VARCHAR | |
 
 ## errors.parquet
