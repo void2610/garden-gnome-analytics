@@ -1,10 +1,10 @@
-import { Badge, Card, Group, Loader, ScrollArea, Stack, Tabs, Text, Title } from '@mantine/core';
 import { LineChart } from '@mantine/charts';
+import { Badge, Card, Group, Loader, ScrollArea, Stack, Tabs, Text, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { QueryBar } from '../components/QueryBar';
-import { type SortableColumn, type SortKey, SortableTable } from '../components/SortableTable';
+import { type SortKey, type SortableColumn, SortableTable } from '../components/SortableTable';
 import { useManifest } from '../hooks/useManifest';
 import { useLocalTableQuery } from '../hooks/useTableQuery';
 import { query } from '../lib/duckdb/query';
@@ -32,6 +32,9 @@ interface EventRow {
   event_type: string;
   payload: string;
 }
+
+// hp を持つイベントのうち、プレイヤーの HP を表すもの (EnemyAction の hp は行動した敵の HP)
+const PLAYER_HP_EVENTS = new Set(['TurnStart', 'PlayerHealthChanged', 'RestEntered']);
 
 interface ErrorRow {
   timestamp: string;
@@ -181,6 +184,7 @@ export function RunDetailPage() {
   }, [events, timelineColumns, timelineTQ.query.tf]);
 
   const hpSeries = (events ?? [])
+    .filter((e) => PLAYER_HP_EVENTS.has(e.event_type))
     .map((e) => {
       try {
         const p = JSON.parse(e.payload) as Record<string, unknown>;
