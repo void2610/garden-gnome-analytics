@@ -1,6 +1,56 @@
 {
-  "generatedAt": "2026-10-31T05:01:02.463Z",
+  "generatedAt": "2026-10-31T21:48:43.927Z",
   "datasets": [
+    {
+      "eventSlug": "gemudan14-demo-2026-10",
+      "deviceSlug": "macbook-pro-m1",
+      "meta": {
+        "event": "ゲムダン14 デモ展示",
+        "event_date": "2026-10-31",
+        "venue": "ゲムダン14 会場",
+        "device": "MacBook Pro (M1)",
+        "game_version": "0.3.0 (15:45 までは修正前の版、15:46 の起動から 80c3032)",
+        "notes": "MacBook Pro (M1) の Steam 版での 11:00〜17:00 の収録ログ。Steam が 15:45 に 80c3032 へ更新した。unity-player-2026-10-31-1356.log / -1546.log はそれぞれ 13:56 / 15:46 に起動した Unity のプレイヤーのログ"
+      },
+      "eventMeta": {
+        "name": "ゲムダン14 デモ展示",
+        "description": "方向カードの効果の途中でカードを押し直してからターンエンドを押すと、ターンが終わらず進行不能になるバグがあった (11:16 からのラン、タイトルへ戻して最初から遊び直した)。\nMacBook Pro (M5) での試遊は 2 回で、2 回目 (11:24 から) は最後のボスまで勝った。\nMacBook Pro (M1) は Steam 版で 11:00〜17:00 の全ランを置いた。15:45 に Steam が 80c3032 (敵の絵の左右反転と色の修正入り) へ更新したので、それより前の起動は修正前の版。\n",
+        "min_duration_sec": 30
+      },
+      "runCount": 24,
+      "eventCount": 11688,
+      "errorCount": 59,
+      "period": {
+        "from": "2026-10-31T02:53:46.563Z",
+        "to": "2026-10-31T07:48:43.609Z"
+      },
+      "hasMapName": true
+    },
+    {
+      "eventSlug": "gemudan14-demo-2026-10",
+      "deviceSlug": "macbook-pro-m5",
+      "meta": {
+        "event": "ゲムダン14 デモ展示",
+        "event_date": "2026-10-31",
+        "venue": "ゲムダン14 会場",
+        "device": "MacBook Pro (M5)",
+        "game_version": "0.3.0 (2ea50ce)",
+        "notes": "MacBook Pro (M5) での収録ログ。unity-player-2026-10-31.log は同じ起動の Unity のプレイヤーのログ"
+      },
+      "eventMeta": {
+        "name": "ゲムダン14 デモ展示",
+        "description": "方向カードの効果の途中でカードを押し直してからターンエンドを押すと、ターンが終わらず進行不能になるバグがあった (11:16 からのラン、タイトルへ戻して最初から遊び直した)。\nMacBook Pro (M5) での試遊は 2 回で、2 回目 (11:24 から) は最後のボスまで勝った。\nMacBook Pro (M1) は Steam 版で 11:00〜17:00 の全ランを置いた。15:45 に Steam が 80c3032 (敵の絵の左右反転と色の修正入り) へ更新したので、それより前の起動は修正前の版。\n",
+        "min_duration_sec": 30
+      },
+      "runCount": 4,
+      "eventCount": 1626,
+      "errorCount": 0,
+      "period": {
+        "from": "2026-10-31T02:12:48.785Z",
+        "to": "2026-10-31T02:40:59.128Z"
+      },
+      "hasMapName": true
+    },
     {
       "eventSlug": "gemudan12-demo-2026-05",
       "deviceSlug": "macbook-pro",
@@ -56,31 +106,6 @@
         "to": "2026-05-03T07:59:38.448Z"
       },
       "hasMapName": false
-    },
-    {
-      "eventSlug": "gemudan14-demo-2026-10",
-      "deviceSlug": "macbook-pro-m5",
-      "meta": {
-        "event": "ゲムダン14 デモ展示",
-        "event_date": "2026-10-31",
-        "venue": "ゲムダン14 会場",
-        "device": "MacBook Pro (M5)",
-        "game_version": "0.3.0 (2ea50ce)",
-        "notes": "MacBook Pro (M5) での収録ログ。unity-player-2026-10-31.log は同じ起動の Unity のプレイヤーのログ"
-      },
-      "eventMeta": {
-        "name": "ゲムダン14 デモ展示",
-        "description": "方向カードの効果の途中でカードを押し直してからターンエンドを押すと、ターンが終わらず進行不能になるバグがあった (11:16 からのラン、タイトルへ戻して最初から遊び直した)。\nこの MacBook Pro (M5) での試遊は 2 回で、2 回目 (11:24 から) は最後のボスまで勝った。\n",
-        "min_duration_sec": 30
-      },
-      "runCount": 4,
-      "eventCount": 1626,
-      "errorCount": 0,
-      "period": {
-        "from": "2026-10-31T02:12:48.785Z",
-        "to": "2026-10-31T02:40:59.128Z"
-      },
-      "hasMapName": true
     }
   ]
 }

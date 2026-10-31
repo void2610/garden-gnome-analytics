@@ -1,0 +1,6 @@
+event: ゲムダン14 デモ展示
+event_date: 2026-10-31
+venue: ゲムダン14 会場
+device: MacBook Pro (M1)
+game_version: 0.3.0 (15:45 までは修正前の版、15:46 の起動から 80c3032)
+notes: MacBook Pro (M1) の Steam 版での 11:00〜17:00 の収録ログ。Steam が 15:45 に 80c3032 へ更新した。unity-player-2026-10-31-1356.log / -1546.log はそれぞれ 13:56 / 15:46 に起動した Unity のプレイヤーのログ
