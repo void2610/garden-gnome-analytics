@@ -184,6 +184,16 @@ describe('parseRunLogLine', () => {
     ],
     ['2026-10-30T16:10:17.805|TreasureCollected|position=7,4|item=Honey|how=Step', 'how', 'Step'],
     ['2026-10-30T16:10:17.805|TreasureOpenFailed|position=7,4|how=Effect', 'how', 'Effect'],
+    [
+      '2026-10-31T13:20:05.112|PlantRemoved|cardName=Handofglory|growthStage=Seed|position=4,6|reason=Triggered|cardDestination=Discard|source=Unknown',
+      'source',
+      'Plant:Handofglory',
+    ],
+    [
+      '2026-10-31T13:20:05.112|PlantRemoved|cardName=Handofglory|growthStage=Seed|position=4,6|reason=Expired|cardDestination=Discard',
+      'source',
+      'Plant:Handofglory',
+    ],
   ])('%s を読める', (line, key, expected) => {
     const r = parseRunLogLine(line);
     expect(r.ok).toBe(true);

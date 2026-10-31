@@ -3,6 +3,7 @@ import {
   KNOWN_EVENT_NAMES,
   RunEventBodySchema,
   type Result,
+  type RunEventBody,
   type RunEvent,
   type ParseError,
   ok,
@@ -15,6 +16,14 @@ import { tokenizeRunLogLine } from './tokenize';
 // new Date(s) は ISO に Z が無いとローカル時刻と解釈される（仕様）
 export function parseLocalIsoToDate(iso: string): Date {
   return new Date(iso);
+}
+
+// ゲムダン14 当日までの版は使い切り・ターン切れで消えた植物の原因を Unknown と書くので、消えた植物自身を原因にする
+function fillPlantRemovalSource(body: RunEventBody): RunEventBody {
+  if (body.event !== 'PlantRemoved' || !body.cardName) return body;
+  if (body.reason !== 'Triggered' && body.reason !== 'Expired') return body;
+  if (body.source && body.source !== 'Unknown') return body;
+  return { ...body, source: `Plant:${body.cardName}` };
 }
 
 export function parseRunLogLine(line: string, lineNumber = 0): Result<RunEvent, ParseError> {
@@ -55,7 +64,7 @@ export function parseRunLogLine(line: string, lineNumber = 0): Result<RunEvent, 
   return ok({
     timestamp: tokens.timestamp,
     date: parseLocalIsoToDate(tokens.timestamp),
-    body: result.data,
+    body: fillPlantRemovalSource(result.data),
     raw: line,
   });
 }
