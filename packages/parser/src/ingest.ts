@@ -278,6 +278,7 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
     events: allEvents,
     runs: allRuns,
     errors: allErrors,
+    partitions: manifestEntries,
     alsoWriteJsonl: options.dev,
   });
 

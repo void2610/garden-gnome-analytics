@@ -49,6 +49,8 @@ export interface WriteParquetOptions {
   events: EventRow[];
   runs: RunRow[];
   errors: ErrorRow[];
+  // 全データセット。エラーが無いデータセットにも空の errors を書き、画面が全データセットの errors をまとめて読めるようにする
+  partitions: Array<{ eventSlug: string; deviceSlug: string }>;
   alsoWriteJsonl?: boolean;
 }
 
@@ -85,22 +87,41 @@ function groupByPartition<T extends { event_slug: string; device_slug: string }>
   return [...map.values()];
 }
 
+function withEmptyPartitions<T>(
+  groups: PartitionGroup<T>[],
+  partitions: Array<{ eventSlug: string; deviceSlug: string }>,
+): PartitionGroup<T>[] {
+  const keys = new Set(groups.map((g) => g.key));
+  const empty = partitions
+    .filter((p) => !keys.has(`${p.eventSlug}/${p.deviceSlug}`))
+    .map((p) => ({
+      key: `${p.eventSlug}/${p.deviceSlug}`,
+      eventSlug: p.eventSlug,
+      deviceSlug: p.deviceSlug,
+      rows: [],
+    }));
+  return [...groups, ...empty];
+}
+
 async function copyNdjsonToParquet(args: {
   instance: DuckDBInstance;
   ndjsonPath: string;
   outPath: string;
   schemaSql: string;
+  hasRows: boolean;
 }): Promise<void> {
   const conn = await args.instance.connect();
   try {
     // テーブル定義を CREATE TABLE で固定（read_json_auto は型が暴れることがある）
     await conn.run('DROP TABLE IF EXISTS staging');
     await conn.run(`CREATE TABLE staging (${args.schemaSql})`);
-    // NDJSON → staging
-    const escaped = args.ndjsonPath.replace(/'/g, "''");
-    await conn.run(
-      `INSERT INTO staging SELECT * FROM read_json('${escaped}', format='newline_delimited')`,
-    );
+    // NDJSON → staging (空のファイルは read_json が列を決められないので読まない)
+    if (args.hasRows) {
+      const escaped = args.ndjsonPath.replace(/'/g, "''");
+      await conn.run(
+        `INSERT INTO staging SELECT * FROM read_json('${escaped}', format='newline_delimited')`,
+      );
+    }
     const outEscaped = args.outPath.replace(/'/g, "''");
     await conn.run(`COPY staging TO '${outEscaped}' (FORMAT PARQUET, COMPRESSION ZSTD)`);
     await conn.run('DROP TABLE staging');
@@ -132,6 +153,7 @@ export async function writeParquetSet(opts: WriteParquetOptions): Promise<void> 
         instance,
         ndjsonPath,
         outPath,
+        hasRows: g.rows.length > 0,
         schemaSql: `
           event_slug VARCHAR,
           device_slug VARCHAR,
@@ -165,6 +187,7 @@ export async function writeParquetSet(opts: WriteParquetOptions): Promise<void> 
         instance,
         ndjsonPath,
         outPath,
+        hasRows: g.rows.length > 0,
         schemaSql: `
           run_id VARCHAR,
           event_slug VARCHAR,
@@ -189,7 +212,7 @@ export async function writeParquetSet(opts: WriteParquetOptions): Promise<void> 
     }
 
     // errors
-    for (const g of groupByPartition(opts.errors)) {
+    for (const g of withEmptyPartitions(groupByPartition(opts.errors), opts.partitions)) {
       const ndjsonPath = join(tmpDir, `errors_${g.eventSlug}_${g.deviceSlug}.ndjson`);
       await writeNdjson(ndjsonPath, g.rows);
       const outPath = join(
@@ -204,6 +227,7 @@ export async function writeParquetSet(opts: WriteParquetOptions): Promise<void> 
         instance,
         ndjsonPath,
         outPath,
+        hasRows: g.rows.length > 0,
         schemaSql: `
           event_slug VARCHAR,
           device_slug VARCHAR,
