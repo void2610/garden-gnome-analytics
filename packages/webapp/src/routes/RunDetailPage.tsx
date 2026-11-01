@@ -197,6 +197,9 @@ export function RunDetailPage() {
     })
     .filter((v): v is { seq: number; hp: number } => v !== null);
 
+  if (!parsed) return <Text c="dimmed">ラン ID の形式が違います: {slug}</Text>;
+  // 読み込み中は undefined、探して無かったときは null
+  if (summary === null) return <Text c="dimmed">ラン {parsed.runId} が見つかりません</Text>;
   if (!summary) return <Loader />;
 
   return (
