@@ -31,7 +31,7 @@ import {
 import { Link, useLocation } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useManifest } from '../hooks/useManifest';
-import { AiChatSidebar } from './AiChatSidebar';
+import { AiChatPanel } from './AiChatPanel';
 
 interface NavItem {
   label: string;
@@ -64,16 +64,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [chatOpened, chat] = useDisclosure(false);
 
   return (
-    <AppShell
-      header={{ height: 56 }}
-      navbar={{ width: 220, breakpoint: 'sm' }}
-      aside={{
-        width: 420,
-        breakpoint: 'md',
-        collapsed: { desktop: !chatOpened, mobile: !chatOpened },
-      }}
-      padding="md"
-    >
+    <AppShell header={{ height: 56 }} navbar={{ width: 220, breakpoint: 'sm' }} padding="md">
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
           <Title order={4}>Garden Gnome Analytics</Title>
@@ -123,9 +114,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           />
         )}
       </AppShell.Navbar>
-      <AppShell.Aside>
-        <AiChatSidebar onClose={chat.close} />
-      </AppShell.Aside>
+      <AiChatPanel opened={chatOpened} onClose={chat.close} />
       <AppShell.Main>{children}</AppShell.Main>
     </AppShell>
   );
