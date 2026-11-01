@@ -8,14 +8,12 @@ import {
 import {
   ActionIcon,
   Alert,
-  Anchor,
   Box,
   Button,
   Code,
   Group,
   Loader,
   Paper,
-  PasswordInput,
   ScrollArea,
   Spoiler,
   Stack,
@@ -25,12 +23,12 @@ import {
   Tooltip,
   TypographyStylesProvider,
 } from '@mantine/core';
-import { IconKey, IconPlayerStop, IconSend, IconTrash, IconX } from '@tabler/icons-react';
+import { IconPlayerStop, IconSend, IconTrash, IconX } from '@tabler/icons-react';
 import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useManifest } from '../hooks/useManifest';
-import { loadApiKey, saveApiKey } from '../lib/ai/apiKey';
+import { API_KEY } from '../lib/ai/apiKey';
 import { AI_MODEL, type ChatProgress, runChatTurn } from '../lib/ai/chat';
 import { buildSystemPrompt } from '../lib/ai/systemPrompt';
 import { useLocalization } from '../lib/localization';
@@ -51,8 +49,6 @@ const SUGGESTIONS = [
 export function AiChatSidebar({ onClose }: { onClose: () => void }) {
   const { data: manifest } = useManifest();
   const { data: localization } = useLocalization();
-  const [apiKey, setApiKey] = useState(loadApiKey);
-  const [keyDraft, setKeyDraft] = useState('');
   const [items, setItems] = useState<ChatItem[]>([]);
   const [history, setHistory] = useState<Anthropic.Beta.BetaMessageParam[]>([]);
   const [input, setInput] = useState('');
@@ -109,7 +105,7 @@ export function AiChatSidebar({ onClose }: { onClose: () => void }) {
     setItems((prev) => [...prev, { kind: 'user', text: question }]);
     try {
       const result = await runChatTurn({
-        apiKey,
+        apiKey: API_KEY,
         system,
         datasets,
         messages: [...history, { role: 'user', content: question }],
@@ -167,18 +163,6 @@ export function AiChatSidebar({ onClose }: { onClose: () => void }) {
       <Group justify="space-between" p="sm" wrap="nowrap">
         <Title order={5}>AI に聞く</Title>
         <Group gap={4} wrap="nowrap">
-          {apiKey && (
-            <Tooltip label="API キーを入れ直す">
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                aria-label="API キーを入れ直す"
-                onClick={() => setApiKey('')}
-              >
-                <IconKey size={16} />
-              </ActionIcon>
-            </Tooltip>
-          )}
           <Tooltip label="会話を消す">
             <ActionIcon
               variant="subtle"
@@ -196,36 +180,12 @@ export function AiChatSidebar({ onClose }: { onClose: () => void }) {
         </Group>
       </Group>
 
-      {!apiKey ? (
-        <Stack p="sm" gap="sm">
-          <Text size="sm">
-            Claude の API
-            キーを入れると、試遊ログについて質問できます。キーはこのブラウザにだけ保存され、Anthropic
-            の API へ直接送られます。
-          </Text>
-          <Anchor href="https://platform.claude.com/settings/keys" target="_blank" size="sm">
-            API キーを発行する
-          </Anchor>
-          <PasswordInput
-            placeholder="sk-ant-..."
-            value={keyDraft}
-            onChange={(e) => setKeyDraft(e.currentTarget.value)}
-            aria-label="Claude の API キー"
-          />
-          <Button
-            disabled={!keyDraft.trim()}
-            onClick={() => {
-              saveApiKey(keyDraft.trim());
-              setApiKey(keyDraft.trim());
-              setKeyDraft('');
-            }}
-          >
-            保存する
-          </Button>
-          <Button variant="subtle" color="gray" size="xs" onClick={() => saveApiKey('')}>
-            保存済みのキーを消す
-          </Button>
-        </Stack>
+      {!API_KEY ? (
+        <Text size="sm" p="sm">
+          このビルドには Claude の API キーが入っていません。GitHub の secret の ANTHROPIC_API_KEY
+          を設定してデプロイし直すと使えます。手元で動かすときは packages/webapp/.env.local に
+          VITE_ANTHROPIC_API_KEY を書きます。
+        </Text>
       ) : (
         <>
           <ScrollArea flex={1} viewportRef={viewportRef} px="sm">
@@ -358,7 +318,7 @@ function ChatItemView({ item }: { item: ChatItem }) {
 function describeError(e: unknown): string {
   if (e instanceof APIUserAbortError) return '止めました。';
   if (e instanceof AuthenticationError)
-    return 'API キーが正しくありません。右上の鍵のボタンから入れ直してください。';
+    return '埋め込んだ API キーが正しくありません。GitHub の secret の ANTHROPIC_API_KEY を確かめてください。';
   if (e instanceof RateLimitError)
     return 'API の利用上限に達しました。少し待ってから送り直してください。';
   if (e instanceof APIError) return `API のエラー (${e.status ?? '通信'}): ${e.message}`;

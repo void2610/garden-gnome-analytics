@@ -26,6 +26,9 @@ __pycache__/
 *.sqlite
 *.sqlite-journal
 
+# ローカルの環境変数 (API キーを置く)
+.env*.local
+
 # OS / IDE
 .DS_Store
 .idea/

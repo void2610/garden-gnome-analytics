@@ -21,7 +21,7 @@
 - エラー集計
 - 比較ビュー（複数データセットの並列比較）
 - イベント・機器・期間でのフィルタ（URL search params に永続化）
-- AI に聞く（右上のボタンで開くサイドバー。Claude の API キーを入れると、AI がログを SQL で調べながらゲームバランスや試遊の回し方の質問に答える。キーはブラウザの localStorage にだけ保存し、Anthropic の API へ直接送る）
+- AI に聞く（右上のボタンで開くサイドバー。AI がログを SQL で調べながらゲームバランスや試遊の回し方の質問に答える。API キーはデプロイ時に GitHub の secret `ANTHROPIC_API_KEY` から埋め込む。公開サイトの JS から読めるので、上限額を付けた専用のキーを使う。手元では `packages/webapp/.env.local` に `VITE_ANTHROPIC_API_KEY` を書く）
 
 ## クイックスタート
 

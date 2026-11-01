@@ -28,6 +28,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
       - run: pnpm -F @gga/webapp build
+        env:
+          VITE_ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: packages/webapp/dist
