@@ -1,4 +1,13 @@
-import { ActionIcon, AppShell, Group, NavLink, Title, useMantineColorScheme } from '@mantine/core';
+import {
+  ActionIcon,
+  AppShell,
+  Group,
+  NavLink,
+  Title,
+  Tooltip,
+  useMantineColorScheme,
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import {
   IconMoonStars,
   IconSun,
@@ -17,10 +26,12 @@ import {
   IconMap2,
   IconAlertTriangle,
   IconArrowsLeftRight,
+  IconMessageChatbot,
 } from '@tabler/icons-react';
 import { Link, useLocation } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useManifest } from '../hooks/useManifest';
+import { AiChatSidebar } from './AiChatSidebar';
 
 interface NavItem {
   label: string;
@@ -50,13 +61,33 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { setColorScheme, colorScheme } = useMantineColorScheme();
   const { data: manifest } = useManifest();
   const location = useLocation();
+  const [chatOpened, chat] = useDisclosure(false);
 
   return (
-    <AppShell header={{ height: 56 }} navbar={{ width: 220, breakpoint: 'sm' }} padding="md">
+    <AppShell
+      header={{ height: 56 }}
+      navbar={{ width: 220, breakpoint: 'sm' }}
+      aside={{
+        width: 420,
+        breakpoint: 'md',
+        collapsed: { desktop: !chatOpened, mobile: !chatOpened },
+      }}
+      padding="md"
+    >
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
           <Title order={4}>Garden Gnome Analytics</Title>
           <Group>
+            <Tooltip label="AI に聞く">
+              <ActionIcon
+                variant={chatOpened ? 'filled' : 'default'}
+                size="lg"
+                aria-label="AI に聞く"
+                onClick={chat.toggle}
+              >
+                <IconMessageChatbot size={18} />
+              </ActionIcon>
+            </Tooltip>
             <ActionIcon
               variant="default"
               size="lg"
@@ -92,6 +123,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
           />
         )}
       </AppShell.Navbar>
+      <AppShell.Aside>
+        <AiChatSidebar onClose={chat.close} />
+      </AppShell.Aside>
       <AppShell.Main>{children}</AppShell.Main>
     </AppShell>
   );
