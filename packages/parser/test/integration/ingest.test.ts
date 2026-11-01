@@ -87,3 +87,29 @@ describe('runIngest 統合テスト', () => {
     conn.disconnectSync();
   });
 });
+
+describe('runIngest エラーの無いデータセット', () => {
+  it('エラーが 1 件も無くても空の errors Parquet を書く', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'gga-ingest-noerr-'));
+    const dsDir = join(root, 'data', 'test-event', 'no-error-device');
+    const outDir = join(root, 'public-data');
+    await mkdir(dsDir, { recursive: true });
+    await writeFile(join(dsDir, 'meta.yaml'), META);
+    await writeFile(join(dsDir, 'run_20260503_112337_468.log'), RUN_LOG);
+
+    const result = await runIngest({
+      dataDir: join(root, 'data'),
+      outDir,
+      logger: pino({ level: 'silent' }),
+    });
+    expect(result.errors).toBe(0);
+
+    const inst = await DuckDBInstance.create(':memory:');
+    const conn = await inst.connect();
+    const res = await conn.runAndReadAll(
+      `SELECT COUNT(*) AS c FROM read_parquet('${outDir}/errors/event=test-event/device=no-error-device/data.parquet')`,
+    );
+    expect(Number(res.getRowObjects()[0]?.c)).toBe(0);
+    conn.disconnectSync();
+  });
+});
