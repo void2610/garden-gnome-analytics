@@ -30,6 +30,8 @@ jobs:
       - run: pnpm -F @gga/webapp build
         env:
           VITE_ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # GitHub Pages は存在しないパスに 404.html を返すので、SPA を置いてページを直接開けるようにする
+      - run: cp packages/webapp/dist/index.html packages/webapp/dist/404.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: packages/webapp/dist
