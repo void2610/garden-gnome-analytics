@@ -1,0 +1,6 @@
+event: ゲムダン14 デモ展示
+event_date: 2026-10-31
+venue: ゲムダン14 会場
+device: Steam Deck
+game_version: 0.3.0 (15:46 までは修正前の版、15:47 の起動から BuildID 26341537)
+notes: Steam Deck の Steam 版 (Proton) での 11:44〜16:33 の収録ログ。Steam が 15:47 に BuildID 26341537 へ更新した。unity-player-2026-10-31-1407.log / -1547.log はそれぞれ 14:07 / 15:47 に起動した Unity のプレイヤーのログで、それより前の起動のプレイヤーのログは残っていない
