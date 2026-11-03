@@ -130,4 +130,33 @@ describe('aggregateRun', () => {
     });
     expect(r.finalDeckSize).toBe(3);
   });
+  it('チュートリアルとまとめたランで本編が SessionEnd なしに途切れたら abandoned', () => {
+    const r = aggregateRun({
+      runId: 'r1',
+      eventSlug: 'e',
+      deviceSlug: 'd',
+      events: [
+        ev('2026-10-31T13:59:01.190', { event: 'SessionStart' }),
+        ev('2026-10-31T14:02:13.900', { event: 'SessionEnd', result: 'TutorialClear' }),
+        ev('2026-10-31T14:02:14.001', { event: 'SessionStart' }),
+        ev('2026-10-31T14:06:11.000', { event: 'TurnStart', hp: 60, maxHp: 100 }),
+      ],
+    });
+    expect(r.outcome).toBe('abandoned');
+  });
+
+  it('チュートリアルの戦闘は戦闘数に入れない', () => {
+    const r = aggregateRun({
+      runId: 'r1',
+      eventSlug: 'e',
+      deviceSlug: 'd',
+      events: [
+        ev('2026-10-31T11:44:13.809', { event: 'BattleStart', nodeType: 'Tutorial' }),
+        ev('2026-10-31T11:47:39.998', { event: 'BattleWin', remainHp: 77, maxHp: 100 }),
+        ev('2026-10-31T11:48:22.000', { event: 'BattleStart', nodeType: 'Battle' }),
+        ev('2026-10-31T11:50:00.000', { event: 'BattleWin', remainHp: 90, maxHp: 100 }),
+      ],
+    });
+    expect(r.battleWinCount).toBe(1);
+  });
 });

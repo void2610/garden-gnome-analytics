@@ -45,6 +45,7 @@ export function aggregateRun(input: AggregateInput): RunSummary {
   let sessionResult: string | undefined;
   let lastHpZero = false;
   let lastStageId: string | undefined;
+  let inTutorialBattle = false;
 
   for (const ev of events) {
     const b = ev.body;
@@ -54,18 +55,25 @@ export function aggregateRun(input: AggregateInput): RunSummary {
         if (b.stageId === undefined || b.stageId !== lastStageId) stageCount += 1;
         lastStageId = b.stageId;
         break;
+      case 'SessionStart':
+        // チュートリアルと本編をまとめたランでは、終わり方は本編のものだけで決める
+        hasSessionEnd = false;
+        sessionResult = undefined;
+        lastHpZero = false;
+        break;
       case 'BattleStart':
+        inTutorialBattle = b.nodeType === 'Tutorial';
         if (b.deckCards) {
           finalDeckSize = b.deckCards.split(';').filter((s) => s.length > 0).length;
         }
         break;
       case 'BattleWin':
-        battleWinCount += 1;
+        if (!inTutorialBattle) battleWinCount += 1;
         if (typeof b.remainHp === 'number') finalHp = b.remainHp;
         if (typeof b.maxHp === 'number') maxHp = b.maxHp;
         break;
       case 'BattleLose':
-        battleLossCount += 1;
+        if (!inTutorialBattle) battleLossCount += 1;
         lastHpZero = true;
         break;
       case 'TurnStart':

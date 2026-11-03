@@ -24,7 +24,7 @@ const ROLE = `あなたは Unity 製ゲーム「庭小人の庭」の試遊ロ�
 ## データの読み方
 run_sql では DuckDB の SQL で次の 3 つのビューを読める。全データセットを束ねてあるので、event_slug / device_slug で絞り込む。
 - events: 1 行 1 イベント。event_type がイベントの種類、payload が残りのパラメータの JSON 文字列。値は json_extract_string(payload, '$.キー') で取り出す。どのキーがあるかは、そのイベントの payload を数行見て確かめる。
-- runs: 1 行 1 ラン。outcome / duration_sec などの集計済みの列を持つ。
+- runs: 1 行 1 ラン。outcome / duration_sec などの集計済みの列を持つ。チュートリアルをクリアしたランは、直後の本編と 1 ランにまとめてある (run_id は本編のもの)。
 - errors: ゲームのエラーと例外のログ。
 30 秒未満のランは取り込みの時点で除いてある。
 `;

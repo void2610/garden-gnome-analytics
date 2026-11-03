@@ -21,14 +21,16 @@ public-data/
 | --- | --- | --- |
 | event_slug | VARCHAR | イベント slug |
 | device_slug | VARCHAR | 機器 slug |
-| run_id | VARCHAR | run ファイル名（拡張子なし） |
-| seq | INTEGER | 1 ラン内の連番 (0-based) |
+| run_id | VARCHAR | run ファイル名（拡張子なし）。チュートリアルをまとめたランは本編のファイル名 |
+| seq | INTEGER | 1 ラン内の連番 (0-based)。チュートリアルをまとめたランはチュートリアルから続けて数える |
 | timestamp | TIMESTAMP | ローカル時刻 |
 | event_type | VARCHAR | イベント種別 |
 | payload | VARCHAR | 残りパラメータの JSON |
 | game_version | VARCHAR | meta.yaml の game_version |
 
 ## runs.parquet
+
+チュートリアルをクリアした run ファイルと、その直後 (10 秒以内) に始まった本編の run ファイルは 1 ランにまとめる (ゲームは別のファイルに書くが、来場者 1 人の 1 回のプレイなので)。途中でやめたチュートリアルは単独のランのまま残す。
 
 | 列 | 型 | 説明 |
 | --- | --- | --- |
@@ -37,11 +39,11 @@ public-data/
 | started_at, ended_at | TIMESTAMP | |
 | duration_sec | DOUBLE | |
 | stage_count | INTEGER | StageEnter 数 |
-| battle_win_count | INTEGER | BattleWin 数 |
-| battle_loss_count | INTEGER | BattleLose または HP=0 数 |
+| battle_win_count | INTEGER | BattleWin 数 (チュートリアルの戦闘は数えない) |
+| battle_loss_count | INTEGER | BattleLose または HP=0 数 (チュートリアルの戦闘は数えない) |
 | final_hp / max_hp | INTEGER | |
 | final_deck_size | INTEGER | 最終 BattleStart の deckCards 件数 |
-| outcome | VARCHAR | win / loss / abandoned / tutorial (SessionEnd の result から決める。タイトルへ戻った・放置・時間切れ・終了は abandoned、チュートリアル戦闘のランは tutorial) |
+| outcome | VARCHAR | win / loss / abandoned / tutorial (SessionEnd の result から決める。タイトルへ戻った・放置・時間切れ・終了は abandoned、本編が続かなかったチュートリアルクリアのランは tutorial。チュートリアルをまとめたランは本編の SessionEnd で決める) |
 | game_version | VARCHAR | |
 
 ## errors.parquet

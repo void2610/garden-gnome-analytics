@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import pino from 'pino';
 import { aggregateRun } from './aggregateRun';
 import { runIdFromPath } from './correlate';
+import { mergeTutorialRuns, type RunFile } from './mergeTutorialRuns';
 import { parseNormalLogFile } from './normalLog/parseFile';
 import { parseRunLogFileToArray } from './runLog/parseFile';
 import { scanDataDir } from './scan';
@@ -98,6 +99,7 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
     const minDurationSec = ds.eventMeta?.min_duration_sec ?? null;
     let dsTooShortCount = 0;
 
+    const runFiles: RunFile[] = [];
     for (let i = 0; i < ds.runLogPaths.length; i++) {
       const rp = ds.runLogPaths[i];
       if (!rp) continue;
@@ -107,7 +109,14 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
           warnings.push(`${rp}#${e.lineNumber} (${e.kind}): ${e.message.slice(0, 120)}`);
         },
       });
-      const runId = runIdFromPath(rp);
+      runFiles.push({ runId: runIdFromPath(rp), path: rp, events });
+    }
+
+    let dsTutorialMergedCount = 0;
+    for (const run of mergeTutorialRuns(runFiles)) {
+      const { runId, events } = run;
+      const rp = run.paths.join(' + ');
+      if (run.paths.length > 1) dsTutorialMergedCount += 1;
 
       // run summary を先に計算し、play_hours 外なら出力をスキップする。
       const summary = aggregateRun({
@@ -210,6 +219,11 @@ export async function runIngest(options: IngestOptions): Promise<IngestResult> {
 
     if (dsExcludedCount > 0) {
       log.info(`  ${ds.eventSlug}/${ds.deviceSlug}: ${dsExcludedCount} ラン除外 (play_hours 外)`);
+    }
+    if (dsTutorialMergedCount > 0) {
+      log.info(
+        `  ${ds.eventSlug}/${ds.deviceSlug}: ${dsTutorialMergedCount} 件のチュートリアルを直後の本編のランにまとめた`,
+      );
     }
     if (dsTooShortCount > 0) {
       log.info(
