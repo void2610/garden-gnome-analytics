@@ -113,3 +113,38 @@ describe('runIngest エラーの無いデータセット', () => {
     conn.disconnectSync();
   });
 });
+
+describe('runIngest 機器をまたいだログの重複', () => {
+  it('別の機器のフォルダに同じ中身のログがあれば警告する', async () => {
+    const tmpRoot = await mkdtemp(join(tmpdir(), 'gga-ingest-dup-'));
+    const dataDir = join(tmpRoot, 'data');
+    for (const device of ['device-a', 'device-b']) {
+      const dsDir = join(dataDir, 'test-event', device);
+      await mkdir(dsDir, { recursive: true });
+      await writeFile(join(dsDir, 'meta.yaml'), META);
+      await writeFile(join(dsDir, 'run_20260503_112337_468.log'), RUN_LOG);
+    }
+    const result = await runIngest({
+      dataDir,
+      outDir: join(tmpRoot, 'public-data'),
+      logger: pino({ level: 'silent' }),
+    });
+    expect(result.warnings.some((w) => w.includes('同じ中身のログ'))).toBe(true);
+  });
+
+  it('同じ機器のフォルダの中だけなら警告しない', async () => {
+    const tmpRoot = await mkdtemp(join(tmpdir(), 'gga-ingest-nodup-'));
+    const dataDir = join(tmpRoot, 'data');
+    const dsDir = join(dataDir, 'test-event', 'device-a');
+    await mkdir(dsDir, { recursive: true });
+    await writeFile(join(dsDir, 'meta.yaml'), META);
+    await writeFile(join(dsDir, 'run_20260503_112337_468.log'), RUN_LOG);
+    await writeFile(join(dsDir, 'the-garden-of-garden-gnome_20260503_112328.log'), NORMAL_LOG);
+    const result = await runIngest({
+      dataDir,
+      outDir: join(tmpRoot, 'public-data'),
+      logger: pino({ level: 'silent' }),
+    });
+    expect(result.warnings.some((w) => w.includes('同じ中身のログ'))).toBe(false);
+  });
+});

@@ -1,4 +1,5 @@
 // data/<event>/<device>/meta.yaml を走査し、データセット候補を列挙
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, basename } from 'node:path';
 import fg from 'fast-glob';
@@ -123,5 +124,27 @@ export async function scanDataDir(dataDir: string): Promise<ScanResult> {
     });
   }
 
+  warnings.push(...(await findCopiedLogs(datasets)));
   return { datasets, warnings };
+}
+
+// 集めるときに別の機器のログが混ざると、同じランを 2 台で二重に数えるので、中身が同じログを機器をまたいで探す
+async function findCopiedLogs(datasets: DatasetCandidate[]): Promise<ScanWarning[]> {
+  const firstSeen = new Map<string, { path: string; dirPath: string }>();
+  const warnings: ScanWarning[] = [];
+  for (const ds of datasets) {
+    for (const path of [...ds.runLogPaths, ...ds.normalLogPaths]) {
+      const content = await readFile(path);
+      if (content.length === 0) continue;
+      const hash = createHash('sha256').update(content).digest('hex');
+      const seen = firstSeen.get(hash);
+      if (!seen) {
+        firstSeen.set(hash, { path, dirPath: ds.dirPath });
+        continue;
+      }
+      if (seen.dirPath === ds.dirPath) continue;
+      warnings.push({ path, message: `別の機器のフォルダに同じ中身のログがある: ${seen.path}` });
+    }
+  }
+  return warnings;
 }
