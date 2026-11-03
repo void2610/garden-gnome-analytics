@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-03T09:12:11.972Z",
+  "generatedAt": "2026-11-03T09:33:13.783Z",
   "datasets": [
     {
       "eventSlug": "gemudan12-demo-2026-05",
@@ -48,14 +48,39 @@
         },
         "min_duration_sec": 30
       },
-      "runCount": 53,
-      "eventCount": 9457,
-      "errorCount": 252,
+      "runCount": 24,
+      "eventCount": 4545,
+      "errorCount": 128,
       "period": {
-        "from": "2026-05-03T02:05:43.618Z",
-        "to": "2026-05-03T07:59:38.448Z"
+        "from": "2026-05-03T02:13:49.455Z",
+        "to": "2026-05-03T07:58:48.534Z"
       },
       "hasMapName": false
+    },
+    {
+      "eventSlug": "gemudan14-demo-2026-10",
+      "deviceSlug": "steamdeck",
+      "meta": {
+        "event": "ゲムダン14 デモ展示",
+        "event_date": "2026-10-31",
+        "venue": "ゲムダン14 会場",
+        "device": "Steam Deck",
+        "game_version": "0.3.0 (15:46 までは修正前の版、15:47 の起動から BuildID 26341537)",
+        "notes": "Steam Deck の Steam 版 (Proton) での 11:44〜16:33 の収録ログ。Steam が 15:47 に BuildID 26341537 へ更新した。unity-player-2026-10-31-1407.log / -1547.log はそれぞれ 14:07 / 15:47 に起動した Unity のプレイヤーのログで、それより前の起動のプレイヤーのログは残っていない"
+      },
+      "eventMeta": {
+        "name": "ゲムダン14 デモ展示",
+        "description": "方向カードの効果の途中でカードを押し直してからターンエンドを押すと、ターンが終わらず進行不能になるバグがあった (11:16 からのラン、タイトルへ戻して最初から遊び直した)。\nMacBook Pro (M5) での試遊は 2 回で、2 回目 (11:24 から) は最後のボスまで勝った。\nMacBook Pro (M1) は Steam 版で 11:00〜17:00 の全ランを置いた。15:45 に Steam が 80c3032 (敵の絵の左右反転と色の修正入り) へ更新したので、それより前の起動は修正前の版。\nSteam Deck は Steam 版 (Proton) で 11:44〜16:33 の全ランを置いた。15:47 に Steam が BuildID 26341537 へ更新したので、それより前の起動は修正前の版。\n",
+        "min_duration_sec": 30
+      },
+      "runCount": 13,
+      "eventCount": 9945,
+      "errorCount": 119,
+      "period": {
+        "from": "2026-10-31T02:44:13.752Z",
+        "to": "2026-10-31T07:33:31.204Z"
+      },
+      "hasMapName": true
     },
     {
       "eventSlug": "gemudan14-demo-2026-10",
@@ -104,31 +129,6 @@
       "period": {
         "from": "2026-10-31T02:53:46.563Z",
         "to": "2026-10-31T07:48:43.609Z"
-      },
-      "hasMapName": true
-    },
-    {
-      "eventSlug": "gemudan14-demo-2026-10",
-      "deviceSlug": "steamdeck",
-      "meta": {
-        "event": "ゲムダン14 デモ展示",
-        "event_date": "2026-10-31",
-        "venue": "ゲムダン14 会場",
-        "device": "Steam Deck",
-        "game_version": "0.3.0 (15:46 までは修正前の版、15:47 の起動から BuildID 26341537)",
-        "notes": "Steam Deck の Steam 版 (Proton) での 11:44〜16:33 の収録ログ。Steam が 15:47 に BuildID 26341537 へ更新した。unity-player-2026-10-31-1407.log / -1547.log はそれぞれ 14:07 / 15:47 に起動した Unity のプレイヤーのログで、それより前の起動のプレイヤーのログは残っていない"
-      },
-      "eventMeta": {
-        "name": "ゲムダン14 デモ展示",
-        "description": "方向カードの効果の途中でカードを押し直してからターンエンドを押すと、ターンが終わらず進行不能になるバグがあった (11:16 からのラン、タイトルへ戻して最初から遊び直した)。\nMacBook Pro (M5) での試遊は 2 回で、2 回目 (11:24 から) は最後のボスまで勝った。\nMacBook Pro (M1) は Steam 版で 11:00〜17:00 の全ランを置いた。15:45 に Steam が 80c3032 (敵の絵の左右反転と色の修正入り) へ更新したので、それより前の起動は修正前の版。\nSteam Deck は Steam 版 (Proton) で 11:44〜16:33 の全ランを置いた。15:47 に Steam が BuildID 26341537 へ更新したので、それより前の起動は修正前の版。\n",
-        "min_duration_sec": 30
-      },
-      "runCount": 13,
-      "eventCount": 9945,
-      "errorCount": 119,
-      "period": {
-        "from": "2026-10-31T02:44:13.752Z",
-        "to": "2026-10-31T07:33:31.204Z"
       },
       "hasMapName": true
     }
